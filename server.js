@@ -45,6 +45,141 @@ function normalize(str) {
   return str.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// Helper: Get current stats
+async function getStats() {
+  try {
+    const { data, error } = await supabase.from('stats').select('total_kites_flied, total_kites_caught').eq('id', 1).single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching stats:', err);
+    return { total_kites_flied: 0, total_kites_caught: 0 };
+  }
+}
+
+// Helper: Generate letter-style HTML for kite
+function generateKiteLetterHTML(kite) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 40px; 
+          background: #0a0a0f; 
+          font-family: 'Cormorant Garamond', Georgia, serif; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          min-height: 100vh;
+        }
+        .letter {
+          width: 612px;
+          height: 792px;
+          background: #e8e0d0;
+          color: #07070d;
+          padding: 60px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          box-sizing: border-box;
+          position: relative;
+          overflow: hidden;
+        }
+        .letter::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(135deg, rgba(201,169,110,0.05), transparent);
+          pointer-events: none;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 40px;
+          border-bottom: 2px solid #c9a96e;
+          padding-bottom: 20px;
+        }
+        .kite-icon { font-size: 48px; display: block; margin-bottom: 10px; }
+        h1 { 
+          font-size: 32px; 
+          margin: 10px 0; 
+          color: #c9a96e;
+          font-weight: 300;
+          letter-spacing: 2px;
+        }
+        .date { 
+          font-size: 12px; 
+          color: #6b6475; 
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+        .salutation { 
+          font-size: 18px; 
+          margin: 30px 0; 
+          color: #07070d;
+        }
+        .message { 
+          font-size: 16px; 
+          line-height: 2; 
+          color: #07070d; 
+          margin: 40px 0;
+          white-space: pre-wrap;
+          font-style: italic;
+        }
+        .signature { 
+          margin-top: 60px; 
+          font-size: 14px; 
+        }
+        .signature-name { 
+          margin-top: 40px; 
+          font-size: 18px;
+        }
+        .footer {
+          position: absolute;
+          bottom: 30px;
+          right: 30px;
+          font-size: 12px;
+          color: #9a9080;
+          letter-spacing: 1px;
+        }
+        .kite-id {
+          position: absolute;
+          bottom: 30px;
+          left: 30px;
+          font-size: 12px;
+          color: #c9a96e;
+          font-family: monospace;
+          letter-spacing: 2px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="letter">
+        <div class="header">
+          <span class="kite-icon">🪁</span>
+          <h1>A Kite Message</h1>
+          <div class="date">${new Date(kite.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </div>
+        
+        <div class="salutation">
+          Dear <strong>${kite.beloved_name}</strong>,
+        </div>
+        
+        <div class="message">${kite.message}</div>
+        
+        <div class="signature">
+          With affection,
+          <div class="signature-name">${kite.is_anonymous ? 'An admirer' : (kite.sender_nickname || kite.sender_name || 'A friend')}</div>
+        </div>
+        
+        <div class="footer">KiteMail — Messages carried by the wind</div>
+        <div class="kite-id">${kite.kite_id}</div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 // ─── API ROUTES ───────────────────────────────────────────────────────────────
 
 // POST /api/fly — Send a kite
@@ -106,6 +241,13 @@ app.post('/api/fly', async (req, res) => {
     // Send ticket email if email provided
     if (sender_email && transporter) {
       await sendTicketEmail(sender_email, kite_id, beloved_name);
+    }
+
+    // Increment total kites flied counter
+    try {
+      await supabase.rpc('increment_kites_flied');
+    } catch (err) {
+      console.error('Error incrementing kites flied:', err);
     }
 
     return res.json({ success: true, kite_id });
@@ -207,6 +349,13 @@ app.post('/api/catch', async (req, res) => {
     const now = new Date().toISOString();
     await supabase.from('kites').update({ status: 'caught', caught_at: now }).eq('id', kite_db_id);
 
+    // Increment total kites caught counter
+    try {
+      await supabase.rpc('increment_kites_caught');
+    } catch (err) {
+      console.error('Error incrementing kites caught:', err);
+    }
+
     return res.json({
       success: true,
       message: kite.message,
@@ -247,6 +396,82 @@ app.get('/api/ticket/:kite_id', async (req, res) => {
 
   } catch (err) {
     console.error('Ticket error:', err);
+    return res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// GET /api/stats — Get kite statistics
+app.get('/api/stats', async (req, res) => {
+  try {
+    const stats = await getStats();
+    return res.json(stats);
+  } catch (err) {
+    console.error('Stats error:', err);
+    return res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// GET /api/download/:kite_id — Download kite as PNG
+app.get('/api/download/:kite_id', async (req, res) => {
+  try {
+    const { kite_id } = req.params;
+
+    const { data: kite, error } = await supabase
+      .from('kites')
+      .select('*')
+      .eq('kite_id', kite_id.toUpperCase())
+      .eq('status', 'caught')
+      .single();
+
+    if (error || !kite) {
+      return res.status(404).json({ error: 'Kite not found or not caught yet.' });
+    }
+
+    // Generate HTML letter
+    const html = generateKiteLetterHTML(kite);
+
+    // Return the HTML with a note about client-side rendering
+    res.type('text/html');
+    res.send(html);
+
+  } catch (err) {
+    console.error('Download error:', err);
+    return res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// POST /api/delete/:kite_id — Delete a caught kite
+app.post('/api/delete/:kite_id', async (req, res) => {
+  try {
+    const { kite_id } = req.params;
+
+    const { data: kite, error: fetchError } = await supabase
+      .from('kites')
+      .select('id, status')
+      .eq('kite_id', kite_id.toUpperCase())
+      .single();
+
+    if (fetchError || !kite) {
+      return res.status(404).json({ error: 'Kite not found.' });
+    }
+
+    if (kite.status !== 'caught') {
+      return res.status(400).json({ error: 'Only caught kites can be deleted.' });
+    }
+
+    // Mark as deleted (soft delete to preserve stats)
+    const now = new Date().toISOString();
+    const { error: deleteError } = await supabase
+      .from('kites')
+      .update({ is_deleted: true, deleted_at: now })
+      .eq('id', kite.id);
+
+    if (deleteError) throw deleteError;
+
+    return res.json({ success: true, message: 'Kite deleted successfully.' });
+
+  } catch (err) {
+    console.error('Delete error:', err);
     return res.status(500).json({ error: 'Something went wrong.' });
   }
 });

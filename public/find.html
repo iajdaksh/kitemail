@@ -199,7 +199,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span></p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span></p>
           <p>No accounts. No ads. Just love.</p>
         </div>
       </div>
@@ -360,6 +360,8 @@
           <div class="message-from">${fromText}</div>
           <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
             <a href="/fly" class="btn btn-outline">🪁 Send one back</a>
+            <button class="btn btn-ghost" onclick="downloadKiteAsImage('${kites[idx].kite_id}')">📥 Download</button>
+            <button class="btn btn-ghost btn-danger" onclick="deleteKite('${kites[idx].kite_id}', this)">🗑 Delete</button>
             <a href="/" class="btn btn-ghost">← Home</a>
           </div>
         `;
@@ -370,6 +372,70 @@
         showAlert(`qalert-${idx}`, 'Something went wrong. Please try again.', 'error');
         btn.disabled = false;
         btn.innerHTML = '✨ Catch It';
+      }
+    }
+
+    async function downloadKiteAsImage(kiteId) {
+      try {
+        // Load html2canvas library
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+        
+        script.onload = async () => {
+          const response = await fetch(`/api/download/${kiteId}`);
+          if (!response.ok) throw new Error('Failed to download');
+          const html = await response.text();
+          
+          // Create temporary container
+          const temp = document.createElement('div');
+          temp.innerHTML = html;
+          temp.style.position = 'fixed';
+          temp.style.top = '-9999px';
+          temp.style.left = '-9999px';
+          document.body.appendChild(temp);
+          
+          // Wait for content to render
+          setTimeout(async () => {
+            const canvas = await html2canvas(temp.querySelector('.letter'), {
+              scale: 2,
+              backgroundColor: '#e8e0d0',
+              logging: false
+            });
+            
+            // Download
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `kite-${kiteId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            document.body.removeChild(temp);
+          }, 500);
+        };
+      } catch (err) {
+        alert('Could not download kite. Please try again.');
+        console.error('Download error:', err);
+      }
+    }
+
+    async function deleteKite(kiteId, btn) {
+      if (!confirm('Are you sure you want to delete this kite? This cannot be undone.')) return;
+      try {
+        btn.disabled = true;
+        btn.textContent = '⏳ Deleting...';
+        const response = await fetch(`/api/delete/${kiteId}`, { method: 'POST' });
+        if (!response.ok) throw new Error('Failed to delete');
+        btn.textContent = '✓ Deleted';
+        btn.style.opacity = '0.5';
+        setTimeout(() => {
+          location.reload();
+        }, 1500);
+      } catch (err) {
+        alert('Could not delete kite. Please try again.');
+        btn.disabled = false;
+        btn.textContent = '🗑 Delete';
+        console.error('Delete error:', err);
       }
     }
 

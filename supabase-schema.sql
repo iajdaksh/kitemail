@@ -40,11 +40,26 @@ CREATE TABLE kites (
   -- Status
   status VARCHAR(20) DEFAULT 'flying',  -- flying | caught
   caught_at TIMESTAMP WITH TIME ZONE,
+  
+  -- Deletion tracking
+  is_deleted BOOLEAN DEFAULT false,
+  deleted_at TIMESTAMP WITH TIME ZONE,
 
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Stats table (persistent counters)
+CREATE TABLE stats (
+  id SERIAL PRIMARY KEY,
+  total_kites_flied BIGINT DEFAULT 0,
+  total_kites_caught BIGINT DEFAULT 0,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Initialize stats with default values
+INSERT INTO stats (id, total_kites_flied, total_kites_caught) VALUES (1, 0, 0);
 
 -- Index for fast beloved search
 CREATE INDEX idx_kites_beloved ON kites (
@@ -68,6 +83,12 @@ CREATE POLICY "Allow read by kite_id" ON kites FOR SELECT USING (true);
 -- Allow update status (when caught)
 CREATE POLICY "Allow update status" ON kites FOR UPDATE USING (true);
 
+-- Stats table policies
+ALTER TABLE stats ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow read stats" ON stats FOR SELECT USING (true);
+CREATE POLICY "Allow update stats" ON stats FOR UPDATE USING (true);
+
 -- Function to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -80,3 +101,23 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER kites_updated_at
   BEFORE UPDATE ON kites
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+  
+-- Stats trigger
+CREATE TRIGGER stats_updated_at
+  BEFORE UPDATE ON stats
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- RPC Functions for incrementing stats
+CREATE OR REPLACE FUNCTION increment_kites_flied()
+RETURNS void AS $$
+BEGIN
+  UPDATE stats SET total_kites_flied = total_kites_flied + 1 WHERE id = 1;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION increment_kites_caught()
+RETURNS void AS $$
+BEGIN
+  UPDATE stats SET total_kites_caught = total_kites_caught + 1 WHERE id = 1;
+END;
+$$ LANGUAGE plpgsql;

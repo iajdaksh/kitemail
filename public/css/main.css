@@ -303,6 +303,13 @@ a:hover { opacity: 0.75; }
 }
 .btn-ghost:hover:not(:disabled) { border-color: var(--border-hover); color: var(--cream); }
 
+.btn-danger {
+  background: transparent;
+  color: #d97777;
+  border: 1px solid rgba(217,119,119,0.3);
+}
+.btn-danger:hover:not(:disabled) { border-color: rgba(217,119,119,0.6); background: rgba(217,119,119,0.08); }
+
 .btn-lg { padding: 16px 36px; font-size: 14px; }
 .btn-full { width: 100%; }
 
@@ -517,6 +524,9 @@ a:hover { opacity: 0.75; }
 .prose ul { color: var(--muted-2); margin-bottom: 16px; padding-left: 20px; font-size: 14px; }
 .prose ul li { margin-bottom: 8px; line-height: 1.7; }
 .prose strong { color: var(--cream); font-weight: 500; }
+
+/* Hide nav-close on desktop by default */
+.nav-close { display: none !important; }
 
 /* ── RESPONSIVE ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {

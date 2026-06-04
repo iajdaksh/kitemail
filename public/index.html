@@ -504,8 +504,27 @@
             </ul>
           </div>
         </div>
+        <div class="footer-stats" id="stats-container" style="display: none;">
+          <div style="text-align: center; margin: 40px 0; padding: 24px 0; border-top: 1px solid rgba(201,169,110,0.1); border-bottom: 1px solid rgba(201,169,110,0.1);">
+            <p style="color: var(--muted); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;">Kites in the Sky</p>
+            <div style="display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;">
+              <div>
+                <p style="font-size: 28px; color: var(--gold); margin: 0; font-weight: 300;">
+                  <span id="total-flied">—</span>
+                </p>
+                <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0; letter-spacing: 0.5px;">Total Flied</p>
+              </div>
+              <div>
+                <p style="font-size: 28px; color: var(--gold); margin: 0; font-weight: 300;">
+                  <span id="total-caught">—</span>
+                </p>
+                <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0; letter-spacing: 0.5px;">Total Caught</p>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="footer-bottom">
-          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
           <p>No accounts. No ads. Just love.</p>
         </div>
       </div>
@@ -514,5 +533,24 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <script>
+    // Fetch and display stats on page load
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        const stats = await response.json();
+        document.getElementById('total-flied').textContent = stats.total_kites_flied || 0;
+        document.getElementById('total-caught').textContent = stats.total_kites_caught || 0;
+        document.getElementById('stats-container').style.display = 'block';
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+    });
+  </script>
 </body>
 </html>
