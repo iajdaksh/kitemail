@@ -360,8 +360,8 @@
           <div class="message-from">${fromText}</div>
           <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
             <a href="/fly" class="btn btn-outline">🪁 Send one back</a>
-            <button class="btn btn-ghost" onclick="downloadKiteAsImage('${kites[idx].kite_id}')">📥 Download</button>
-            <button class="btn btn-ghost btn-danger" onclick="deleteKite('${kites[idx].kite_id}', this)">🗑 Delete</button>
+            <button class="btn btn-ghost" onclick="downloadKiteAsImage('${foundKites[idx].kite_id}')">📥 Download</button>
+            <button class="btn btn-ghost btn-danger" onclick="deleteKite('${foundKites[idx].kite_id}', this)">🗑 Delete</button>
             <a href="/" class="btn btn-ghost">← Home</a>
           </div>
         `;

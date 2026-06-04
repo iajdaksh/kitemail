@@ -269,10 +269,11 @@ app.post('/api/find', async (req, res) => {
 
     let query = supabase
       .from('kites')
-      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob')
+      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted')
       .ilike('beloved_name', beloved_name.trim())
       .ilike('beloved_nickname', beloved_nickname.trim())
-      .eq('beloved_dob', beloved_dob.trim());
+      .eq('beloved_dob', beloved_dob.trim())
+      .eq('status', 'flying');
 
     // If sender_dob filter provided
     if (sender_dob && sender_dob.trim()) {
@@ -282,12 +283,15 @@ app.post('/api/find', async (req, res) => {
     const { data, error } = await query;
     if (error) throw error;
 
-    if (!data || data.length === 0) {
+    // Filter out deleted kites
+    const activeKites = data?.filter(k => !k.is_deleted) || [];
+
+    if (!activeKites || activeKites.length === 0) {
       return res.json({ found: false, kites: [] });
     }
 
     // Return kites without sensitive data
-    const kites = data.map(k => ({
+    const kites = activeKites.map(k => ({
       id: k.id,
       kite_id: k.kite_id,
       questions: [
