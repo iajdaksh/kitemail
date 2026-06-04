@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Safety Guidelines — KiteMail</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .safety-warning {
+      background: rgba(180,100,60,0.08);
+      border: 1px solid rgba(180,100,60,0.2);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+    .safety-warning h4 { color: #e89060; font-size: 13px; margin-bottom: 6px; }
+    .safety-warning p { font-size: 13px; color: var(--muted-2); margin: 0; }
+
+    .safety-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+    .safety-card .icon { font-size: 32px; margin-bottom: 12px; }
+    .safety-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
+    .safety-card p { font-size: 13px; color: var(--muted-2); line-height: 1.7; }
+
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 32px 0;
+    }
+    .do-box, .dont-box {
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .do-box {
+      background: rgba(70,160,90,0.06);
+      border: 1px solid rgba(70,160,90,0.15);
+    }
+    .dont-box {
+      background: rgba(180,60,60,0.06);
+      border: 1px solid rgba(180,60,60,0.15);
+    }
+    .do-box h4 { color: #70c880; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+    .dont-box h4 { color: #e87070; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+    .do-box ul, .dont-box ul { list-style: none; padding: 0; }
+    .do-box ul li, .dont-box ul li { font-size: 13px; color: var(--muted-2); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); line-height: 1.5; }
+    .do-box ul li:last-child, .dont-box ul li:last-child { border: none; }
+    .do-box ul li::before { content: '✓ '; color: #70c880; }
+    .dont-box ul li::before { content: '✕ '; color: #e87070; }
+
+    @media (max-width: 600px) {
+      .do-dont { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="ambient ambient-1"></div>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/ticket">Track Kite</a></li>
+      <li><a href="/find">Find a Kite</a></li>
+      <li><a href="/fly" class="nav-cta">Fly a Kite</a></li>
+    </ul>
+    <button class="nav-hamburger">☰</button>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="page-hero fade-in fade-in-1">
+      <div class="container-sm">
+        <div class="section-tag">Safety Guidelines</div>
+        <h1 class="section-title">Your safety <em>matters</em></h1>
+        <p class="section-sub" style="margin: 12px auto 0; text-align: center;">KiteMail is built for love — not harm. Please read this before you fly.</p>
+      </div>
+    </div>
+
+    <div class="container-sm" style="padding-bottom: 80px;">
+
+      <div class="safety-warning fade-in fade-in-2">
+        <h4>⚠️ Important</h4>
+        <p>KiteMail is designed for genuine personal messages between people who share a real connection. It is not a tool for harassment, unwanted contact, or any form of harm. Misuse will result in permanent removal.</p>
+      </div>
+
+      <div class="prose fade-in fade-in-2">
+        <h2>How security works</h2>
+        <p>KiteMail uses a layered system to make sure only the right person reads your message:</p>
+        <ul>
+          <li><strong>Name + Nickname + Birthday</strong> — the combination of three is extremely rare to match accidentally.</li>
+          <li><strong>3 personal questions, 2 correct answers needed</strong> — these must be things only your beloved knows from your shared life.</li>
+          <li><strong>Sender's birthday hidden</strong> — used only as an optional filter, never shown to the receiver.</li>
+        </ul>
+        <p>This means a stranger cannot read a message that isn't meant for them — unless the questions were written carelessly (e.g. "what colour is the sky?").</p>
+      </div>
+
+      <div class="do-dont fade-in fade-in-3">
+        <div class="do-box">
+          <h4>✦ Do</h4>
+          <ul>
+            <li>Write from a place of genuine feeling</li>
+            <li>Use questions only your beloved can answer</li>
+            <li>Respect if they don't respond or reply</li>
+            <li>Use hints to help without giving away answers</li>
+            <li>Be honest — even if it's hard to say</li>
+          </ul>
+        </div>
+        <div class="dont-box">
+          <h4>✕ Don't</h4>
+          <ul>
+            <li>Send threatening or harmful content</li>
+            <li>Use easy questions anyone could guess</li>
+            <li>Send to someone who has asked you not to contact them</li>
+            <li>Use this to stalk, harass, or manipulate</li>
+            <li>Share someone else's kite details</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="safety-card fade-in fade-in-3">
+        <div class="icon">🎭</div>
+        <h3>On anonymity</h3>
+        <p>The anonymous option exists for shy hearts, not cowardly ones. It's for the person who can't bring themselves to say "it's me" — but wants their beloved to feel something real. Please don't use anonymity to say things you wouldn't say with your name attached.</p>
+      </div>
+
+      <div class="safety-card fade-in fade-in-4">
+        <div class="icon">💔</div>
+        <h3>Unsolicited contact</h3>
+        <p>If someone has clearly expressed they do not want contact from you, please respect that. A kite can be a beautiful thing — but sending one to someone who has explicitly asked you not to reach out is a form of harassment, not romance. KiteMail supports reporting of such misuse.</p>
+      </div>
+
+      <div class="safety-card fade-in fade-in-4">
+        <div class="icon">🛡️</div>
+        <h3>Content we prohibit</h3>
+        <p>Any message containing threats, hate speech, sexual content directed at minors, explicit non-consensual material, or content designed to harm will be removed. We reserve the right to remove any content and block any sender found in violation of these guidelines.</p>
+      </div>
+
+      <div class="safety-card">
+        <div class="icon">📧</div>
+        <h3>Report misuse</h3>
+        <p>If you received a kite that made you feel unsafe, threatened, or harassed — please contact us. We take reports seriously and will act swiftly. You can reach us at <a href="mailto:safety@kitemail.app">safety@kitemail.app</a>.</p>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <p>A message carried by the wind — meant only for someone who knows to look up.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Send</h5>
+            <ul>
+              <li><a href="/fly">Fly a Kite</a></li>
+              <li><a href="/find">Find a Kite</a></li>
+              <li><a href="/ticket">Track Status</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Info</h5>
+            <ul>
+              <li><a href="/about">About</a></li>
+              <li><a href="/safety">Safety</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="/terms">Terms</a></li>
+              <li><a href="/privacy">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span></p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

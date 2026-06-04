@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find Your Kite — KiteMail</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .find-hero { padding: 130px 0 40px; text-align: center; }
+    .find-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 64px); font-weight: 300; color: var(--cream); }
+    .find-hero h1 em { font-style: italic; color: var(--gold); }
+
+    .search-card { margin-bottom: 24px; }
+
+    .kite-result {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      transition: border-color 0.3s;
+      cursor: pointer;
+    }
+    .kite-result:hover { border-color: rgba(201,169,110,0.25); }
+    .kite-result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .kite-result-meta { font-size: 12px; color: var(--muted); }
+    .kite-result-meta strong { color: var(--muted-2); }
+
+    /* Questions unlock */
+    .questions-panel {
+      display: none;
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    .questions-panel.open { display: block; }
+
+    .q-item { margin-bottom: 20px; }
+    .q-text { font-size: 14px; color: var(--cream); margin-bottom: 6px; font-weight: 400; }
+    .q-hint { font-size: 11px; color: var(--gold-dim); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .q-hint::before { content: '✦'; }
+
+    /* Message reveal */
+    .message-reveal {
+      display: none;
+      background: var(--bg-3);
+      border: 1px solid rgba(201,169,110,0.2);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+    }
+    .message-reveal.show { display: block; }
+    .message-reveal-icon { font-size: 48px; margin-bottom: 16px; animation: kiteFloat 3s ease-in-out infinite; display: inline-block; }
+    .message-caught-text { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--muted); font-style: italic; margin-bottom: 24px; }
+    .message-body {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      color: var(--cream);
+      line-height: 1.8;
+      text-align: left;
+      white-space: pre-wrap;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .message-from { font-size: 12px; color: var(--muted-2); text-align: right; font-style: italic; }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 24px;
+    }
+    .no-results .icon { font-size: 56px; margin-bottom: 20px; opacity: 0.5; }
+    .no-results h3 { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
+    .no-results p { font-size: 13px; color: var(--muted); }
+
+    .results-section { display: none; }
+    .results-section.show { display: block; }
+
+    .filter-note {
+      background: rgba(201,169,110,0.06);
+      border: 1px solid rgba(201,169,110,0.15);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      font-size: 12px;
+      color: var(--muted-2);
+      margin-bottom: 20px;
+      display: none;
+    }
+    .filter-note.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/safety">Safety</a></li>
+      <li><a href="/ticket">Track Kite</a></li>
+      <li><a href="/fly" class="nav-cta">Fly a Kite</a></li>
+    </ul>
+    <button class="nav-hamburger">☰</button>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="find-hero fade-in fade-in-1">
+      <div class="container-sm">
+        <div class="section-tag">Find a Kite</div>
+        <h1>Look up — is there a <em>kite for you?</em></h1>
+        <p style="color: var(--muted-2); margin-top: 12px;">Someone may have sent you a message. Enter your details to find it.</p>
+      </div>
+    </div>
+
+    <div class="container-sm" style="padding-bottom: 80px;">
+
+      <!-- Search Form -->
+      <div class="card search-card fade-in fade-in-2">
+        <div id="searchAlert" class="alert"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Your First Name <span class="required">*</span></label>
+            <input type="text" id="findName" class="form-input" placeholder="e.g. Priya" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Nickname <span class="required">*</span></label>
+            <input type="text" id="findNickname" class="form-input" placeholder="What they call you" autocomplete="off" />
+            <p class="form-hint">The nickname that person uses for you.</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Your Birthday <span class="required">*</span></label>
+            <input type="text" id="belovedDob" class="form-input" placeholder="DD/MM" maxlength="5" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sender's Birthday <span style="color: var(--muted); font-size: 10px;">(optional)</span></label>
+            <input type="text" id="filterDob" class="form-input" placeholder="DD/MM — to narrow results" maxlength="5" autocomplete="off" />
+            <p class="form-hint">Use if you think you know who sent it.</p>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="searchKites()">
+          🔍 &nbsp;Search the Sky
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div id="resultsSection" class="results-section">
+        <div id="filterNote" class="filter-note">
+          🪁 Multiple kites found with your details. Use sender's birthday above to filter, or try answering each one.
+        </div>
+        <div id="resultsContainer"></div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <p>A message carried by the wind — meant only for someone who knows to look up.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Navigate</h5>
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/fly">Fly a Kite</a></li>
+              <li><a href="/ticket">Track Status</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Info</h5>
+            <ul>
+              <li><a href="/about">About</a></li>
+              <li><a href="/safety">Safety</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="/terms">Terms</a></li>
+              <li><a href="/privacy">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span></p>
+          <p>No accounts. No ads. Just love.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let foundKites = [];
+
+    async function searchKites() {
+      const name = document.getElementById('findName').value.trim();
+      const nickname = document.getElementById('findNickname').value.trim();
+      const dob = document.getElementById('belovedDob').value.trim();
+      const filterDob = document.getElementById('filterDob').value.trim();
+
+      if (!name || !nickname || !dob) {
+        return showAlert('searchAlert', 'Please fill in your name, nickname, and birthday.', 'error');
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Searching...';
+
+      try {
+        const res = await fetch('/api/find', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ beloved_name: name, beloved_nickname: nickname, beloved_dob: dob, sender_dob: filterDob })
+        });
+        const data = await res.json();
+
+        const section = document.getElementById('resultsSection');
+        const container = document.getElementById('resultsContainer');
+        const filterNote = document.getElementById('filterNote');
+
+        section.classList.add('show');
+
+        if (!data.found || data.kites.length === 0) {
+          container.innerHTML = `
+            <div class="no-results card">
+              <div class="icon">🌬️</div>
+              <h3>No kites found</h3>
+              <p>The sky looks clear for now. Make sure your name, nickname, and birthday are exactly as the sender would have written them.</p>
+              <div style="margin-top: 24px;">
+                <a href="/fly" class="btn btn-outline">🪁 Fly one yourself?</a>
+              </div>
+            </div>
+          `;
+          filterNote.classList.remove('show');
+        } else {
+          foundKites = data.kites;
+          filterNote.classList.toggle('show', data.multiple);
+          container.innerHTML = '';
+          data.kites.forEach((kite, idx) => renderKite(kite, idx, container));
+        }
+
+      } catch (err) {
+        showAlert('searchAlert', 'Something went wrong. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔍 &nbsp;Search the Sky';
+      }
+    }
+
+    function renderKite(kite, idx, container) {
+      const div = document.createElement('div');
+      div.className = 'kite-result fade-in';
+      div.id = `kite-${idx}`;
+
+      const sentDate = new Date(kite.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const fromText = kite.sender_visible
+        ? `From: <strong>${kite.sender_visible.name || kite.sender_visible.nickname || 'Someone'}</strong>`
+        : `From: <strong>Anonymous 🎭</strong>`;
+
+      div.innerHTML = `
+        <div class="kite-result-header">
+          <div>
+            <div class="badge badge-flying" id="badge-${idx}">🪁 Flying</div>
+          </div>
+          <div class="kite-result-meta">
+            ${fromText} &nbsp;·&nbsp; Sent ${sentDate}
+          </div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="toggleQuestions(${idx}, '${kite.id}')">
+          🔐 Try to Catch This Kite
+        </button>
+        <div class="questions-panel" id="qpanel-${idx}">
+          <p style="font-size:13px; color: var(--muted-2); margin-bottom: 20px;">Answer at least <strong style="color:var(--cream)">2 of 3</strong> questions correctly to read your message.</p>
+          ${kite.questions.map(q => `
+            <div class="q-item">
+              <div class="q-text">${q.q}</div>
+              ${q.hint ? `<div class="q-hint">${q.hint}</div>` : ''}
+              <input type="text" class="form-input" id="ans-${idx}-${q.idx}" placeholder="Your answer..." autocomplete="off" />
+            </div>
+          `).join('')}
+          <div id="qalert-${idx}" class="alert"></div>
+          <button class="btn btn-primary btn-full" onclick="catchKite(${idx}, '${kite.id}')">
+            ✨ Catch It
+          </button>
+        </div>
+        <div class="message-reveal" id="reveal-${idx}"></div>
+      `;
+      container.appendChild(div);
+    }
+
+    function toggleQuestions(idx, kiteId) {
+      const panel = document.getElementById(`qpanel-${idx}`);
+      panel.classList.toggle('open');
+    }
+
+    async function catchKite(idx, kiteDbId) {
+      const answers = {
+        1: document.getElementById(`ans-${idx}-1`)?.value || '',
+        2: document.getElementById(`ans-${idx}-2`)?.value || '',
+        3: document.getElementById(`ans-${idx}-3`)?.value || '',
+      };
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Checking...';
+
+      try {
+        const res = await fetch('/api/catch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kite_db_id: kiteDbId, answers })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          const alert = document.getElementById(`qalert-${idx}`);
+          alert.textContent = `Only ${data.correct || 0} of 3 correct. Need at least 2. Check your answers and try again.`;
+          alert.className = 'alert show alert-error';
+          btn.disabled = false;
+          btn.innerHTML = '✨ Catch It';
+          return;
+        }
+
+        // SUCCESS — reveal message
+        const badge = document.getElementById(`badge-${idx}`);
+        badge.className = 'badge badge-caught';
+        badge.textContent = '✓ Caught';
+
+        document.getElementById(`qpanel-${idx}`).classList.remove('open');
+        document.querySelector(`#kite-${idx} .btn-outline`).style.display = 'none';
+
+        const sentDate = new Date(data.sent_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const fromText = data.is_anonymous
+          ? '— from someone who cares 🎭'
+          : `— from ${data.sender?.name || data.sender?.nickname || 'Someone special'}`;
+
+        const reveal = document.getElementById(`reveal-${idx}`);
+        reveal.innerHTML = `
+          <div class="message-reveal-icon">💌</div>
+          <p class="message-caught-text">You caught it. Sent on ${sentDate}.</p>
+          <div class="message-body">${escapeHtml(data.message)}</div>
+          <div class="message-from">${fromText}</div>
+          <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <a href="/fly" class="btn btn-outline">🪁 Send one back</a>
+            <a href="/" class="btn btn-ghost">← Home</a>
+          </div>
+        `;
+        reveal.classList.add('show');
+        reveal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      } catch (err) {
+        showAlert(`qalert-${idx}`, 'Something went wrong. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '✨ Catch It';
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

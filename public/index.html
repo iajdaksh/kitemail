@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiteMail — Messages Carried by the Wind</title>
+  <meta name="description" content="Send secret messages through the sky. Like a kite — meant for someone who knows to look up." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    /* ── HERO ─────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 100px 24px 60px;
+    }
+
+    .hero-bg-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,169,110,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(80,50,130,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-kite-bg {
+      position: absolute;
+      font-size: 280px;
+      opacity: 0.03;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%) rotate(-15deg);
+      pointer-events: none;
+      animation: kiteFloat 6s ease-in-out infinite;
+      user-select: none;
+    }
+
+    .hero-content {
+      text-align: center;
+      max-width: 780px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim));
+    }
+    .hero-eyebrow::after { transform: scaleX(-1); }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(48px, 9vw, 100px);
+      font-weight: 300;
+      line-height: 1.0;
+      color: var(--cream);
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .hero-title .accent {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--gold), #e8c87a, var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(16px, 2.5vw, 22px);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--muted-2);
+      margin-bottom: 48px;
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 64px;
+    }
+
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 40px;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      text-decoration: none;
+      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-btn-fly {
+      background: linear-gradient(135deg, #c9a96e, #a07840);
+      color: #07070d;
+      box-shadow: 0 4px 30px rgba(201,169,110,0.2);
+    }
+    .hero-btn-fly:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(201,169,110,0.35);
+    }
+    .hero-btn-fly::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .hero-btn-fly:hover::before { opacity: 1; }
+
+    .hero-btn-find {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid rgba(201,169,110,0.35);
+    }
+    .hero-btn-find:hover {
+      background: rgba(201,169,110,0.08);
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .hero-btn-icon { font-size: 18px; }
+
+    /* Kite string visual */
+    .hero-kite-visual {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .kite-emoji-main {
+      font-size: 56px;
+      display: inline-block;
+      animation: kiteFloat 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(201,169,110,0.3));
+    }
+
+    /* Scroll indicator */
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.4;
+      animation: fadeIn 1s ease 1.5s forwards;
+      opacity: 0;
+    }
+    .scroll-hint span { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--gold-dim), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { transform: scaleY(1); opacity: 0.4; }
+      50% { transform: scaleY(0.6); opacity: 0.8; }
+    }
+
+    /* ── HOW IT WORKS ─────────────────────────────────────────── */
+    .how-section {
+      padding: 100px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .how-header { text-align: center; margin-bottom: 64px; }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      position: relative;
+    }
+
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 40px 32px;
+      transition: all 0.35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .step:first-child { border-radius: 12px 0 0 12px; }
+    .step:last-child { border-radius: 0 12px 12px 0; }
+
+    .step::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+    .step:hover::before { transform: scaleX(1); }
+    .step:hover { border-color: rgba(201,169,110,0.15); transform: translateY(-4px); }
+
+    .step-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 64px;
+      font-weight: 300;
+      color: rgba(201,169,110,0.1);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    .step-icon { font-size: 28px; margin-bottom: 16px; display: block; }
+    .step-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ── FEATURE STRIP ────────────────────────────────────────── */
+    .features-section {
+      padding: 80px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .features-inner {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .features-text .section-title { font-size: clamp(28px, 4vw, 42px); text-align: left; }
+    .features-list { list-style: none; margin-top: 28px; }
+    .features-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted-2);
+    }
+    .features-list li:last-child { border: none; }
+    .features-list li .fi { color: var(--gold); font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+
+    .features-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .feature-card:hover {
+      border-color: rgba(201,169,110,0.2);
+      transform: translateY(-2px);
+    }
+    .feature-card .icon { font-size: 28px; margin-bottom: 10px; }
+    .feature-card h4 { font-size: 13px; color: var(--cream); font-weight: 500; margin-bottom: 6px; }
+    .feature-card p { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+    /* ── CTA SECTION ──────────────────────────────────────────── */
+    .cta-section {
+      padding: 100px 0;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-inner {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .cta-kite { font-size: 72px; display: inline-block; animation: kiteFloat 4s ease-in-out infinite; margin-bottom: 24px; }
+    .cta-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 5vw, 52px); color: var(--cream); margin-bottom: 16px; font-weight: 300; }
+    .cta-title em { font-style: italic; color: var(--gold); }
+    .cta-sub { color: var(--muted-2); font-size: 15px; margin-bottom: 40px; }
+
+    @media (max-width: 768px) {
+      .steps-grid { grid-template-columns: 1fr; gap: 0; }
+      .step:first-child { border-radius: 12px 12px 0 0; }
+      .step:last-child { border-radius: 0 0 12px 12px; }
+      .features-inner { grid-template-columns: 1fr; padding: 32px 24px; gap: 32px; }
+      .features-cards { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .hero-actions { flex-direction: column; }
+      .hero-btn { width: 100%; justify-content: center; }
+      .features-cards { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/safety">Safety</a></li>
+      <li><a href="/ticket">Track Kite</a></li>
+      <li><a href="/find" class="nav-cta">Find Your Kite</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Menu">☰</button>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg-glow"></div>
+      <div class="hero-kite-bg">🪁</div>
+
+      <div class="hero-content">
+        <div class="hero-eyebrow fade-in fade-in-1">Messages Carried by the Wind</div>
+
+        <div class="hero-kite-visual fade-in fade-in-1">
+          <span class="kite-emoji-main">🪁</span>
+        </div>
+
+        <h1 class="hero-title fade-in fade-in-2">
+          For the one<br/><span class="accent">who knows</span><br/>to look up
+        </h1>
+
+        <p class="hero-subtitle fade-in fade-in-3">
+          A secret message, hidden in the sky.<br/>
+          Only they can catch it.
+        </p>
+
+        <div class="hero-actions fade-in fade-in-4">
+          <a href="/fly" class="hero-btn hero-btn-fly">
+            <span class="hero-btn-icon">🪁</span>
+            Fly Your Kite
+          </a>
+          <a href="/find" class="hero-btn hero-btn-find">
+            <span class="hero-btn-icon">🔍</span>
+            Find Your Kite
+          </a>
+        </div>
+      </div>
+
+      <div class="scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section">
+      <div class="container">
+        <div class="how-header">
+          <div class="section-tag">How it works</div>
+          <h2 class="section-title">Simple as a <em>breath of wind</em></h2>
+          <p class="section-sub" style="margin: 12px auto 0; text-align: center;">No accounts. No algorithms. Just a message and a name.</p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step fade-in fade-in-1">
+            <div class="step-number">01</div>
+            <span class="step-icon">✍️</span>
+            <h3 class="step-title">Write your message</h3>
+            <p class="step-desc">Pour your heart out. Write what you've been meaning to say. Add their name, nickname, and birthday — your kite knows who it's for.</p>
+          </div>
+          <div class="step fade-in fade-in-2">
+            <div class="step-number">02</div>
+            <span class="step-icon">🔐</span>
+            <h3 class="step-title">Set 3 secret questions</h3>
+            <p class="step-desc">Ask things only your beloved would know — a shared memory, a private joke, a date only you two remember. They need 2 of 3 correct.</p>
+          </div>
+          <div class="step fade-in fade-in-3">
+            <div class="step-number">03</div>
+            <span class="step-icon">🪁</span>
+            <h3 class="step-title">Let it fly</h3>
+            <p class="step-desc">Your kite lifts into the sky. You get a ticket ID. They search the sky with their name — and if the wind is right, they'll find it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-section">
+      <div class="container">
+        <div class="features-inner">
+          <div class="features-text">
+            <div class="section-tag">Why KiteMail</div>
+            <h2 class="section-title">Love deserves <em>mystery</em></h2>
+            <ul class="features-list">
+              <li><span class="fi">✦</span> No account needed — completely anonymous if you wish</li>
+              <li><span class="fi">✦</span> Only your beloved can catch what's meant for them</li>
+              <li><span class="fi">✦</span> 3 personal questions — 2 correct to unlock the message</li>
+              <li><span class="fi">✦</span> Sender DOB hidden — extra layer against strangers</li>
+              <li><span class="fi">✦</span> Track your kite — know when it's been caught</li>
+              <li><span class="fi">✦</span> They can fly one back to you, too</li>
+            </ul>
+          </div>
+
+          <div class="features-cards">
+            <div class="feature-card">
+              <div class="icon">🎭</div>
+              <h4>Anonymous</h4>
+              <p>Hide your identity completely — let them wonder</p>
+            </div>
+            <div class="feature-card">
+              <div class="icon">🎫</div>
+              <h4>Kite Ticket</h4>
+              <p>Track if your message reached the right hands</p>
+            </div>
+            <div class="feature-card">
+              <div class="icon">🔒</div>
+              <h4>Secured</h4>
+              <p>Personal questions only your beloved knows</p>
+            </div>
+            <div class="feature-card">
+              <div class="icon">🌍</div>
+              <h4>Global</h4>
+              <p>From anywhere, for anyone, in any language</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="container">
+        <div class="cta-inner">
+          <div class="cta-kite">🪁</div>
+          <h2 class="cta-title">Someone is waiting<br/>for <em>your kite</em></h2>
+          <p class="cta-sub">Send the message you've been holding back. It takes two minutes — and it might mean everything.</p>
+          <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="/fly" class="btn btn-primary btn-lg">🪁 Fly a Kite</a>
+            <a href="/find" class="btn btn-outline btn-lg">🔍 Find My Kite</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <p>A message carried by the wind — meant only for someone who knows to look up.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Send</h5>
+            <ul>
+              <li><a href="/fly">Fly a Kite</a></li>
+              <li><a href="/find">Find a Kite</a></li>
+              <li><a href="/ticket">Track Status</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Learn</h5>
+            <ul>
+              <li><a href="/about">About</a></li>
+              <li><a href="/safety">Safety Guidelines</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="/terms">Terms of Use</a></li>
+              <li><a href="/privacy">Privacy Policy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>No accounts. No ads. Just love.</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

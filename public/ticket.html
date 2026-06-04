@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Your Kite — KiteMail</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .ticket-hero { padding: 130px 0 40px; text-align: center; }
+    .ticket-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 60px); font-weight: 300; color: var(--cream); }
+    .ticket-hero h1 em { color: var(--gold); font-style: italic; }
+
+    .ticket-result {
+      display: none;
+      margin-top: 32px;
+    }
+    .ticket-result.show { display: block; }
+
+    .ticket-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .ticket-top {
+      background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
+      padding: 32px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .ticket-kite { font-size: 64px; display: inline-block; margin-bottom: 16px; }
+    .ticket-kite.flying { animation: kiteFloat 3s ease-in-out infinite; }
+    .ticket-kite.caught { animation: none; }
+
+    .ticket-body { padding: 32px; }
+
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .ticket-row:last-child { border: none; }
+    .ticket-row-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+    .ticket-row-value { color: var(--cream); font-weight: 400; }
+    .ticket-row-value.gold { color: var(--gold); font-family: monospace; letter-spacing: 3px; font-size: 15px; }
+
+    .ticket-dashed {
+      border-top: 2px dashed rgba(255,255,255,0.06);
+      margin: 0 -32px;
+      position: relative;
+    }
+    .ticket-dashed::before,
+    .ticket-dashed::after {
+      content: '';
+      position: absolute;
+      top: -12px;
+      width: 24px; height: 24px;
+      background: var(--bg);
+      border-radius: 50%;
+    }
+    .ticket-dashed::before { left: -12px; }
+    .ticket-dashed::after { right: -12px; }
+
+    .timeline {
+      margin-top: 24px;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 20px;
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 24px;
+      width: 1px;
+      height: calc(100% - 8px);
+      background: var(--border);
+    }
+    .timeline-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .timeline-dot.done { background: rgba(201,169,110,0.15); border: 1px solid rgba(201,169,110,0.3); }
+    .timeline-dot.pending { background: var(--bg-3); border: 1px solid var(--border); }
+    .timeline-content h5 { font-size: 13px; color: var(--cream); margin-bottom: 3px; }
+    .timeline-content p { font-size: 11px; color: var(--muted); margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="ambient ambient-1"></div>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/safety">Safety</a></li>
+      <li><a href="/find">Find a Kite</a></li>
+      <li><a href="/fly" class="nav-cta">Fly a Kite</a></li>
+    </ul>
+    <button class="nav-hamburger">☰</button>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="ticket-hero fade-in fade-in-1">
+      <div class="container-sm">
+        <div class="section-tag">Kite Tracker</div>
+        <h1>Is your kite still <em>flying?</em></h1>
+        <p style="color: var(--muted-2); margin-top: 12px;">Enter your Kite ID to see if it's been caught.</p>
+      </div>
+    </div>
+
+    <div class="container-sm" style="padding-bottom: 80px;">
+      <div class="card fade-in fade-in-2">
+        <div id="ticketAlert" class="alert"></div>
+        <div class="form-group">
+          <label class="form-label">Kite ID <span class="required">*</span></label>
+          <input type="text" id="kiteIdInput" class="form-input" placeholder="KT-XXXXXXXX" maxlength="11" autocomplete="off"
+            style="font-family: monospace; font-size: 16px; letter-spacing: 3px; text-transform: uppercase;"
+            oninput="this.value = this.value.toUpperCase()" />
+          <p class="form-hint">Your Kite ID was shown after sending and optionally emailed to you.</p>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="trackKite()">
+          🎫 Check Status
+        </button>
+      </div>
+
+      <div id="ticketResult" class="ticket-result">
+        <div class="ticket-card">
+          <div class="ticket-top" id="ticketTop">
+            <div class="ticket-kite flying" id="ticketKiteIcon">🪁</div>
+            <div id="ticketStatusBadge"></div>
+            <p id="ticketStatusText" style="font-size:13px; color: var(--muted-2); margin-top: 10px;"></p>
+          </div>
+
+          <div class="ticket-body">
+            <div class="ticket-row">
+              <span class="ticket-row-label">Kite ID</span>
+              <span class="ticket-row-value gold" id="trKiteId">—</span>
+            </div>
+            <div class="ticket-row">
+              <span class="ticket-row-label">For</span>
+              <span class="ticket-row-value" id="trBeloved">—</span>
+            </div>
+            <div class="ticket-row">
+              <span class="ticket-row-label">Sent On</span>
+              <span class="ticket-row-value" id="trSentAt">—</span>
+            </div>
+
+            <div class="ticket-dashed" style="margin: 16px -32px;"></div>
+
+            <div class="timeline" id="ticketTimeline"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+          <a href="/fly" class="btn btn-ghost">🪁 Fly Another</a>
+          <a href="/" class="btn btn-ghost">← Home</a>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <p>A message carried by the wind — meant only for someone who knows to look up.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Navigate</h5>
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/fly">Fly a Kite</a></li>
+              <li><a href="/find">Find a Kite</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="/terms">Terms</a></li>
+              <li><a href="/privacy">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2025 KiteMail. Made with <span class="footer-heart">♥</span></p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Pre-fill from URL param
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (id) {
+        document.getElementById('kiteIdInput').value = id.toUpperCase();
+        setTimeout(trackKite, 300);
+      }
+    });
+
+    async function trackKite() {
+      const kiteId = document.getElementById('kiteIdInput').value.trim().toUpperCase();
+      if (!kiteId) return showAlert('ticketAlert', 'Please enter your Kite ID.', 'error');
+
+      const btn = event?.target;
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Checking...'; }
+
+      try {
+        const res = await fetch(`/api/ticket/${kiteId}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Kite not found.');
+
+        const isCaught = data.status === 'caught';
+
+        // Update UI
+        document.getElementById('trKiteId').textContent = data.kite_id;
+        document.getElementById('trBeloved').textContent = `${data.beloved_name} (${data.beloved_nickname})`;
+        document.getElementById('trSentAt').textContent = formatDate(data.sent_at);
+
+        const badge = document.getElementById('ticketStatusBadge');
+        const kiteIcon = document.getElementById('ticketKiteIcon');
+        const statusText = document.getElementById('ticketStatusText');
+
+        if (isCaught) {
+          badge.innerHTML = '<span class="badge badge-caught">✓ Kite Caught</span>';
+          kiteIcon.textContent = '💌';
+          kiteIcon.classList.remove('flying');
+          kiteIcon.classList.add('caught');
+          statusText.textContent = 'Your message has been read.';
+        } else {
+          badge.innerHTML = '<span class="badge badge-flying">🪁 Still Flying</span>';
+          kiteIcon.textContent = '🪁';
+          kiteIcon.classList.add('flying');
+          statusText.textContent = 'Your kite is still in the sky, waiting to be caught.';
+        }
+
+        // Timeline
+        const sentDate = formatDate(data.sent_at);
+        const caughtDate = isCaught ? formatDate(data.caught_at) : null;
+
+        document.getElementById('ticketTimeline').innerHTML = `
+          <div class="timeline-item">
+            <div class="timeline-dot done">✓</div>
+            <div class="timeline-content">
+              <h5>Kite Released</h5>
+              <p>${sentDate}</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot ${isCaught ? 'done' : 'pending'}">${isCaught ? '✓' : '⋯'}</div>
+            <div class="timeline-content">
+              <h5>${isCaught ? 'Kite Caught' : 'Waiting to be Caught'}</h5>
+              <p>${isCaught ? caughtDate : 'Still flying in the sky...'}</p>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('ticketResult').classList.add('show');
+        document.getElementById('ticketResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        showAlert('ticketAlert', err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '🎫 Check Status'; }
+      }
+    }
+  </script>
+</body>
+</html>
