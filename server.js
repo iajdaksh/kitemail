@@ -5,6 +5,7 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { nanoid } = require('nanoid');
 const nodemailer = require('nodemailer');
+const { findBestMatch } = require('string-similarity');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,44 @@ function generateKiteId() {
 // Normalize text for comparison
 function normalize(str) {
   return str.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Calculate similarity score (0-1) between two strings
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  const s1 = normalize(str1);
+  const s2 = normalize(str2);
+  
+  // Exact match
+  if (s1 === s2) return 1;
+  
+  // Check if one contains the other
+  if (s1.includes(s2) || s2.includes(s1)) return 0.95;
+  
+  // Levenshtein distance based similarity
+  const len1 = s1.length;
+  const len2 = s2.length;
+  const maxLen = Math.max(len1, len2);
+  
+  let distance = 0;
+  const dp = Array(len2 + 1).fill(0).map(() => Array(len1 + 1).fill(0));
+  
+  for (let i = 0; i <= len1; i++) dp[0][i] = i;
+  for (let j = 0; j <= len2; j++) dp[j][0] = j;
+  
+  for (let j = 1; j <= len2; j++) {
+    for (let i = 1; i <= len1; i++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      dp[j][i] = Math.min(
+        dp[j][i - 1] + 1,
+        dp[j - 1][i] + 1,
+        dp[j - 1][i - 1] + cost
+      );
+    }
+  }
+  
+  distance = dp[len2][len1];
+  return 1 - (distance / maxLen);
 }
 
 // Helper: Get current stats
@@ -269,9 +308,7 @@ app.post('/api/find', async (req, res) => {
 
     let query = supabase
       .from('kites')
-      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted')
-      .ilike('beloved_name', beloved_name.trim())
-      .ilike('beloved_nickname', beloved_nickname.trim())
+      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted, beloved_name, beloved_nickname')
       .eq('beloved_dob', beloved_dob.trim())
       .eq('status', 'flying');
 
@@ -283,14 +320,28 @@ app.post('/api/find', async (req, res) => {
     const { data, error } = await query;
     if (error) throw error;
 
-    // Filter out deleted kites
-    const activeKites = data?.filter(k => !k.is_deleted) || [];
+    // Filter out deleted kites and score by similarity (20% error tolerance = 80% match threshold)
+    const threshold = 0.80; // 80% similarity threshold (20% typo tolerance)
+    const activeKites = (data || [])
+      .filter(k => !k.is_deleted)
+      .map(k => ({
+        ...k,
+        nameSimilarity: calculateSimilarity(beloved_name, k.beloved_name),
+        nicknameSimilarity: calculateSimilarity(beloved_nickname, k.beloved_nickname)
+      }))
+      .filter(k => k.nameSimilarity >= threshold && k.nicknameSimilarity >= threshold)
+      .sort((a, b) => {
+        // Sort by combined similarity score (name + nickname average)
+        const scoreA = (a.nameSimilarity + a.nicknameSimilarity) / 2;
+        const scoreB = (b.nameSimilarity + b.nicknameSimilarity) / 2;
+        return scoreB - scoreA; // Higher scores first
+      });
 
     if (!activeKites || activeKites.length === 0) {
       return res.json({ found: false, kites: [] });
     }
 
-    // Return kites without sensitive data
+    // Return kites without sensitive data (remove similarity scores from response)
     const kites = activeKites.map(k => ({
       id: k.id,
       kite_id: k.kite_id,
