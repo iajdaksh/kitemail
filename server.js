@@ -312,6 +312,8 @@ app.post('/api/find', async (req, res) => {
       return res.status(400).json({ error: 'Name, nickname and date of birth are required.' });
     }
 
+    console.log(`[FIND] Searching for: ${beloved_name} / ${beloved_nickname} / ${beloved_dob}`);
+
     let query = supabase
       .from('kites')
       .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted, beloved_name, beloved_nickname')
@@ -324,36 +326,54 @@ app.post('/api/find', async (req, res) => {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error('[FIND] Database error:', error);
+      throw error;
+    }
+
+    console.log(`[FIND] Database returned ${data?.length || 0} kites`);
 
     if (!data || data.length === 0) {
+      console.log('[FIND] No kites found in database');
       return res.json({ found: false, kites: [] });
     }
 
     // Filter out deleted kites and score by similarity (20% error tolerance = 80% match threshold)
     const threshold = 0.80; // 80% similarity threshold (20% typo tolerance)
-    const activeKites = data
-      .filter(k => !k.is_deleted)
-      .map(k => {
-        try {
-          return {
-            ...k,
-            nameSimilarity: calculateSimilarity(beloved_name, k.beloved_name),
-            nicknameSimilarity: calculateSimilarity(beloved_nickname, k.beloved_nickname)
-          };
-        } catch (err) {
-          console.error('Error calculating similarity for kite:', k.id, err);
-          return null;
+    const activeKites = [];
+    
+    for (const k of data) {
+      try {
+        if (k.is_deleted) {
+          console.log(`[FIND] Skipping deleted kite: ${k.id}`);
+          continue;
         }
-      })
-      .filter(k => k !== null)
-      .filter(k => k.nameSimilarity >= threshold && k.nicknameSimilarity >= threshold)
-      .sort((a, b) => {
-        // Sort by combined similarity score (name + nickname average)
-        const scoreA = (a.nameSimilarity + a.nicknameSimilarity) / 2;
-        const scoreB = (b.nameSimilarity + b.nicknameSimilarity) / 2;
-        return scoreB - scoreA; // Higher scores first
-      });
+        
+        const nameSim = calculateSimilarity(beloved_name, k.beloved_name);
+        const nicknameSim = calculateSimilarity(beloved_nickname, k.beloved_nickname);
+        
+        console.log(`[FIND] Kite ${k.id}: name="${k.beloved_name}" (${nameSim.toFixed(2)}), nickname="${k.beloved_nickname}" (${nicknameSim.toFixed(2)})`);
+        
+        if (nameSim >= threshold && nicknameSim >= threshold) {
+          activeKites.push({
+            ...k,
+            nameSimilarity: nameSim,
+            nicknameSimilarity: nicknameSim
+          });
+        }
+      } catch (err) {
+        console.error(`[FIND] Error processing kite ${k?.id}:`, err.message);
+      }
+    }
+
+    // Sort by combined similarity score
+    activeKites.sort((a, b) => {
+      const scoreA = (a.nameSimilarity + a.nicknameSimilarity) / 2;
+      const scoreB = (b.nameSimilarity + b.nicknameSimilarity) / 2;
+      return scoreB - scoreA;
+    });
+
+    console.log(`[FIND] Found ${activeKites.length} matching kites after filtering`);
 
     if (!activeKites || activeKites.length === 0) {
       return res.json({ found: false, kites: [] });
@@ -376,11 +396,12 @@ app.post('/api/find', async (req, res) => {
       } : null
     }));
 
+    console.log(`[FIND] Returning ${kites.length} kites`);
     return res.json({ found: true, kites, multiple: kites.length > 1 });
 
   } catch (err) {
-    console.error('Find error:', err);
-    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    console.error('[FIND] Error:', err);
+    return res.status(500).json({ error: err.message || 'Something went wrong. Please try again.' });
   }
 });
 
