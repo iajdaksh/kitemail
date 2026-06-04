@@ -5,7 +5,6 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { nanoid } = require('nanoid');
 const nodemailer = require('nodemailer');
-const { findBestMatch } = require('string-similarity');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,40 +47,47 @@ function normalize(str) {
 
 // Calculate similarity score (0-1) between two strings
 function calculateSimilarity(str1, str2) {
-  if (!str1 || !str2) return 0;
-  const s1 = normalize(str1);
-  const s2 = normalize(str2);
-  
-  // Exact match
-  if (s1 === s2) return 1;
-  
-  // Check if one contains the other
-  if (s1.includes(s2) || s2.includes(s1)) return 0.95;
-  
-  // Levenshtein distance based similarity
-  const len1 = s1.length;
-  const len2 = s2.length;
-  const maxLen = Math.max(len1, len2);
-  
-  let distance = 0;
-  const dp = Array(len2 + 1).fill(0).map(() => Array(len1 + 1).fill(0));
-  
-  for (let i = 0; i <= len1; i++) dp[0][i] = i;
-  for (let j = 0; j <= len2; j++) dp[j][0] = j;
-  
-  for (let j = 1; j <= len2; j++) {
-    for (let i = 1; i <= len1; i++) {
-      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      dp[j][i] = Math.min(
-        dp[j][i - 1] + 1,
-        dp[j - 1][i] + 1,
-        dp[j - 1][i - 1] + cost
-      );
+  try {
+    if (!str1 || !str2) return 0;
+    const s1 = normalize(str1);
+    const s2 = normalize(str2);
+    
+    // Exact match
+    if (s1 === s2) return 1;
+    
+    // Check if one contains the other
+    if (s1.includes(s2) || s2.includes(s1)) return 0.95;
+    
+    // Levenshtein distance based similarity
+    const len1 = s1.length;
+    const len2 = s2.length;
+    const maxLen = Math.max(len1, len2);
+    
+    if (maxLen === 0) return 1; // Both empty strings
+    
+    const dp = Array(len2 + 1).fill(0).map(() => Array(len1 + 1).fill(0));
+    
+    for (let i = 0; i <= len1; i++) dp[0][i] = i;
+    for (let j = 0; j <= len2; j++) dp[j][0] = j;
+    
+    for (let j = 1; j <= len2; j++) {
+      for (let i = 1; i <= len1; i++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        dp[j][i] = Math.min(
+          dp[j][i - 1] + 1,
+          dp[j - 1][i] + 1,
+          dp[j - 1][i - 1] + cost
+        );
+      }
     }
+    
+    const distance = dp[len2][len1];
+    const similarity = 1 - (distance / maxLen);
+    return Math.max(0, Math.min(1, similarity)); // Clamp between 0-1
+  } catch (err) {
+    console.error('Similarity calculation error:', err);
+    return 0;
   }
-  
-  distance = dp[len2][len1];
-  return 1 - (distance / maxLen);
 }
 
 // Helper: Get current stats
@@ -320,15 +326,27 @@ app.post('/api/find', async (req, res) => {
     const { data, error } = await query;
     if (error) throw error;
 
+    if (!data || data.length === 0) {
+      return res.json({ found: false, kites: [] });
+    }
+
     // Filter out deleted kites and score by similarity (20% error tolerance = 80% match threshold)
     const threshold = 0.80; // 80% similarity threshold (20% typo tolerance)
-    const activeKites = (data || [])
+    const activeKites = data
       .filter(k => !k.is_deleted)
-      .map(k => ({
-        ...k,
-        nameSimilarity: calculateSimilarity(beloved_name, k.beloved_name),
-        nicknameSimilarity: calculateSimilarity(beloved_nickname, k.beloved_nickname)
-      }))
+      .map(k => {
+        try {
+          return {
+            ...k,
+            nameSimilarity: calculateSimilarity(beloved_name, k.beloved_name),
+            nicknameSimilarity: calculateSimilarity(beloved_nickname, k.beloved_nickname)
+          };
+        } catch (err) {
+          console.error('Error calculating similarity for kite:', k.id, err);
+          return null;
+        }
+      })
+      .filter(k => k !== null)
       .filter(k => k.nameSimilarity >= threshold && k.nicknameSimilarity >= threshold)
       .sort((a, b) => {
         // Sort by combined similarity score (name + nickname average)
