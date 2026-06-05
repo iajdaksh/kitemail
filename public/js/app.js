@@ -32,10 +32,26 @@ function initNav() {
   closeBtn.innerHTML = '✕';
   links.prepend(closeBtn);
 
-  hamburger.addEventListener('click', () => links.classList.toggle('open'));
-  closeBtn.addEventListener('click', () => links.classList.remove('open'));
+  // Add backdrop
+  const backdrop = document.createElement('div');
+  backdrop.className = 'nav-backdrop';
+  document.body.appendChild(backdrop);
+
+  const openMenu = () => {
+    links.classList.add('open');
+    backdrop.classList.add('open');
+  };
+
+  const closeMenu = () => {
+    links.classList.remove('open');
+    backdrop.classList.remove('open');
+  };
+
+  hamburger.addEventListener('click', openMenu);
+  closeBtn.addEventListener('click', closeMenu);
+  backdrop.addEventListener('click', closeMenu);
   links.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => links.classList.remove('open'));
+    a.addEventListener('click', closeMenu);
   });
 }
 
