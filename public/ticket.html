@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .ticket-hero { padding: 130px 0 40px; text-align: center; }
-    .ticket-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 60px); font-weight: 300; color: var(--cream); }
+    .ticket-hero h1 { font-family: 'Bodoni Moda', serif; font-size: clamp(36px, 6vw, 60px); font-weight: 300; color: var(--cream); }
     .ticket-hero h1 em { color: var(--gold); font-style: italic; }
 
     .ticket-result {
@@ -121,7 +121,7 @@
       <div class="container-sm">
         <div class="section-tag">Kite Tracker</div>
         <h1>Is your kite still <em>flying?</em></h1>
-        <p style="color: var(--muted-2); margin-top: 12px;">Enter your Kite ID to see if it's been caught.</p>
+        <p style="color: var(--muted-2); margin-top: 12px;">Enter your Kite ID to see where your kite is in the sky.</p>
       </div>
     </div>
 
@@ -158,7 +158,7 @@
               <span class="ticket-row-value" id="trBeloved">—</span>
             </div>
             <div class="ticket-row">
-              <span class="ticket-row-label">Sent On</span>
+              <span class="ticket-row-label">Released On</span>
               <span class="ticket-row-value" id="trSentAt">—</span>
             </div>
 
@@ -289,7 +289,7 @@
           kiteIcon.textContent = '💌';
           kiteIcon.classList.remove('flying');
           kiteIcon.classList.add('caught');
-          statusText.textContent = 'Your message has been read.';
+          statusText.textContent = 'Your kite has been opened.';
         } else {
           badge.innerHTML = '<span class="badge badge-flying">🪁 Still Flying</span>';
           kiteIcon.textContent = '🪁';

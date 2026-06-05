@@ -2,17 +2,19 @@
 function createStars(count = 80) {
   const container = document.querySelector('.stars-bg');
   if (!container) return;
-  for (let i = 0; i < count; i++) {
+  container.innerHTML = '';
+  const items = ['🪁', '☁️', '🕊️', '☁️', '🪁'];
+  for (let i = 0; i < 15; i++) {
     const star = document.createElement('div');
-    star.className = 'star';
-    const size = Math.random() * 2.5 + 0.5;
+    star.className = 'bg-floating-el';
+    star.textContent = items[Math.floor(Math.random() * items.length)];
+    const size = Math.random() * 20 + 16;
     star.style.cssText = `
-      width: ${size}px;
-      height: ${size}px;
       left: ${Math.random() * 100}%;
-      top: ${Math.random() * 100}%;
-      --duration: ${Math.random() * 4 + 2}s;
-      --delay: ${Math.random() * 4}s;
+      font-size: ${size}px;
+      --duration: ${Math.random() * 25 + 15}s;
+      --delay: -${Math.random() * 20}s;
+      --max-opacity: ${Math.random() * 0.25 + 0.15};
     `;
     container.appendChild(star);
   }

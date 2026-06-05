@@ -9,7 +9,7 @@ A romantic, anonymous messaging platform where you send a secret "kite" to someo
 ## Features
 
 - 🪁 **Fly a Kite** — Write a message for someone special, protected by 3 personal security questions
-- 🔍 **Find a Kite** — Search by your name + nickname + birthday to see if someone sent you a message
+- 🔍 **Find a Kite** — Search by your name + nickname + birthday to see if someone flew a kite your way
 - 🎭 **Anonymous mode** — Send without revealing your identity
 - 🎫 **Kite Tracker** — Track if your kite has been caught, with date/time
 - 🔐 **2-of-3 security** — Recipient must answer 2 of 3 questions correctly to unlock the message

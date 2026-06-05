@@ -22,16 +22,16 @@
     .hero-bg-glow {
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,169,110,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(80,50,130,0.07) 0%, transparent 60%);
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,200,100,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(100,180,255,0.06) 0%, transparent 60%);
       pointer-events: none;
     }
 
     .hero-kite-bg {
       position: absolute;
       font-size: 280px;
-      opacity: 0.03;
+      opacity: 0.08;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -55%) rotate(-15deg);
@@ -78,7 +78,7 @@
     }
     .hero-title .accent {
       font-style: italic;
-      background: linear-gradient(135deg, var(--gold), #e8c87a, var(--gold));
+      background: linear-gradient(135deg, var(--gold), #ffb270, var(--gold));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -119,13 +119,13 @@
       overflow: hidden;
     }
     .hero-btn-fly {
-      background: linear-gradient(135deg, #c9a96e, #a07840);
-      color: #07070d;
-      box-shadow: 0 4px 30px rgba(201,169,110,0.2);
+      background: linear-gradient(135deg, var(--gold), #c4643b);
+      color: #ffffff;
+      box-shadow: 0 4px 30px rgba(217, 125, 84, 0.2);
     }
     .hero-btn-fly:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(201,169,110,0.35);
+      box-shadow: 0 12px 40px rgba(217, 125, 84, 0.35);
     }
     .hero-btn-fly::before {
       content: '';
@@ -143,7 +143,7 @@
       border: 1px solid rgba(201,169,110,0.35);
     }
     .hero-btn-find:hover {
-      background: rgba(201,169,110,0.08);
+      background: rgba(217, 125, 84, 0.08);
       transform: translateY(-2px);
       border-color: var(--gold);
     }
@@ -162,7 +162,7 @@
       font-size: 56px;
       display: inline-block;
       animation: kiteFloat 4s ease-in-out infinite;
-      filter: drop-shadow(0 0 20px rgba(201,169,110,0.3));
+      filter: drop-shadow(0 0 20px rgba(217, 125, 84, 0.3));
     }
 
     /* Scroll indicator */
@@ -234,7 +234,7 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 64px;
       font-weight: 300;
-      color: rgba(201,169,110,0.1);
+      color: rgba(0,0,0,0.05);
       line-height: 1;
       margin-bottom: 16px;
     }

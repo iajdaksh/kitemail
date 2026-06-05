@@ -219,11 +219,12 @@ function generateKiteLetterHTML(kite) {
     <head>
       <meta charset="utf-8">
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;0,6..96,400;1,6..96,300;1,6..96,400&display=swap');
         body { 
           margin: 0; 
           padding: 40px; 
-          background: #0a0a0f; 
-          font-family: 'Cormorant Garamond', Georgia, serif; 
+      background: #f2f7fa; 
+          font-family: 'Bodoni Moda', Georgia, serif; 
           display: flex; 
           justify-content: center; 
           align-items: center; 
@@ -232,78 +233,77 @@ function generateKiteLetterHTML(kite) {
         .letter {
           width: 612px;
           height: 792px;
-          background: #e8e0d0;
-          color: #07070d;
-          padding: 60px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: #ffffff;
+      color: #1e2532;
+          padding: 40px 44px 34px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
           box-sizing: border-box;
           position: relative;
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
         .letter::before {
           content: '';
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(135deg, rgba(201,169,110,0.05), transparent);
+      background: linear-gradient(135deg, rgba(217, 125, 84, 0.05), transparent);
           pointer-events: none;
         }
         .header {
           text-align: center;
-          margin-bottom: 40px;
-          border-bottom: 2px solid #c9a96e;
-          padding-bottom: 20px;
+          margin-bottom: 18px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+          padding-bottom: 14px;
         }
-        .kite-icon { font-size: 48px; display: block; margin-bottom: 10px; }
+        .kite-icon { font-size: 28px; display: block; margin-bottom: 6px; }
         h1 { 
-          font-size: 32px; 
-          margin: 10px 0; 
-          color: #c9a96e;
+          font-size: 24px; 
+          margin: 6px 0; 
+      color: #d97d54;
           font-weight: 300;
           letter-spacing: 2px;
         }
         .date { 
-          font-size: 12px; 
-          color: #6b6475; 
+          font-size: 11px; 
+      color: #798699; 
           letter-spacing: 1px;
           text-transform: uppercase;
-        }
-        .salutation { 
-          font-size: 18px; 
-          margin: 30px 0; 
-          color: #07070d;
         }
         .message { 
           font-size: 16px; 
           line-height: 2; 
-          color: #07070d; 
-          margin: 40px 0;
+      color: #1e2532; 
+          margin: 16px 0 0;
           white-space: pre-wrap;
           font-style: italic;
-        }
-        .signature { 
-          margin-top: 60px; 
-          font-size: 14px; 
-        }
-        .signature-name { 
-          margin-top: 40px; 
-          font-size: 18px;
+          flex: 1;
         }
         .footer {
-          position: absolute;
-          bottom: 30px;
-          right: 30px;
+          margin-top: 24px;
+          padding-top: 14px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
           font-size: 12px;
-          color: #9a9080;
+      color: #798699;
           letter-spacing: 1px;
         }
+        .footer-note {
+          white-space: nowrap;
+        }
         .kite-id {
-          position: absolute;
-          bottom: 30px;
-          left: 30px;
           font-size: 12px;
-          color: #c9a96e;
+      color: #d97d54;
           font-family: monospace;
           letter-spacing: 2px;
+          white-space: nowrap;
+        }
+        .sender-name {
+          font-style: italic;
+          color: #798699;
         }
       </style>
     </head>
@@ -315,19 +315,12 @@ function generateKiteLetterHTML(kite) {
           <div class="date">${new Date(kite.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </div>
         
-        <div class="salutation">
-          Dear <strong>${kite.beloved_nickname || kite.beloved_name}</strong>,
-        </div>
-        
         <div class="message">${kite.message}</div>
         
-        <div class="signature">
-          With affection,
-          <div class="signature-name">${kite.is_anonymous ? 'An admirer' : (kite.sender_nickname || kite.sender_name || 'A friend')}</div>
+        <div class="footer">
+          <div class="kite-id">${kite.kite_id}</div>
+          <div class="sender-name">${kite.is_anonymous ? 'Anonymous' : (kite.sender_name || kite.sender_nickname)}</div>
         </div>
-        
-        <div class="footer">KiteMail — Messages carried by the wind</div>
-        <div class="kite-id">${kite.kite_id}</div>
       </div>
     </body>
     </html>
@@ -358,31 +351,32 @@ function generateKiteTicketHTML(kite) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${kite.kite_id} Ticket</title>
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500&family=Outfit:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }
         body {
           margin: 0;
           padding: 32px 16px;
-          background: #14111a;
-          color: #f5efe6;
-          font-family: Georgia, serif;
+      background: #f2f7fa;
+      color: #1e2532;
+          font-family: 'Outfit', sans-serif;
         }
         .ticket {
           max-width: 620px;
           margin: 0 auto;
-          background: linear-gradient(180deg, #211c2a 0%, #17131e 100%);
-          border: 1px solid rgba(201, 169, 110, 0.28);
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbfc 100%);
+      border: 1px solid rgba(0, 0, 0, 0.08);
           border-radius: 28px;
           overflow: hidden;
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.06);
         }
         .top {
           padding: 36px 36px 28px;
           text-align: center;
-          border-bottom: 1px dashed rgba(201, 169, 110, 0.24);
+      border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
         }
         .icon { font-size: 54px; margin-bottom: 10px; }
         .eyebrow {
-          color: #c9a96e;
+      color: #d97d54;
           font-size: 12px;
           letter-spacing: 3px;
           text-transform: uppercase;
@@ -391,11 +385,12 @@ function generateKiteTicketHTML(kite) {
         h1 {
           margin: 0 0 8px;
           font-size: 38px;
+          font-family: 'Bodoni Moda', Georgia, serif;
           font-weight: 500;
         }
         .sub {
           margin: 0;
-          color: #b7a99a;
+      color: #546070;
           font-size: 15px;
           line-height: 1.7;
         }
@@ -408,23 +403,23 @@ function generateKiteTicketHTML(kite) {
         .row {
           padding: 18px 20px;
           border-radius: 18px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(201, 169, 110, 0.12);
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.04);
         }
         .label {
-          color: #9a9080;
+      color: #798699;
           font-size: 11px;
           letter-spacing: 1.8px;
           text-transform: uppercase;
           margin-bottom: 8px;
         }
         .value {
-          color: #f5efe6;
+      color: #1e2532;
           font-size: 18px;
           line-height: 1.5;
         }
         .mono {
-          color: #c9a96e;
+      color: #d97d54;
           font-family: "Courier New", monospace;
           letter-spacing: 3px;
         }
@@ -432,7 +427,7 @@ function generateKiteTicketHTML(kite) {
         .footer {
           margin-top: 24px;
           text-align: center;
-          color: #9a9080;
+      color: #798699;
           font-size: 12px;
           letter-spacing: 0.4px;
         }
@@ -475,7 +470,7 @@ function generateKiteTicketHTML(kite) {
               <div class="value">${kite.beloved_name} (${kite.beloved_nickname})</div>
             </div>
             <div class="row">
-              <div class="label">Sent On</div>
+              <div class="label">Released On</div>
               <div class="value">${sentAt}</div>
             </div>
             <div class="row">
@@ -868,16 +863,16 @@ async function sendTicketEmail(email, kite_id, beloved_name) {
       to: email,
       subject: `Your kite is flying 🪁 — ${kite_id}`,
       html: `
-        <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; background: #0a0a0f; color: #e8e0d0; padding: 40px; border-radius: 12px;">
-          <h1 style="color: #c9a96e; font-size: 28px; margin-bottom: 8px;">🪁 Your kite is in the sky</h1>
-          <p style="color: #9a9080; font-size: 14px; margin-bottom: 32px;">Flying towards <strong style="color:#e8e0d0;">${beloved_name}</strong></p>
-          <div style="background: #13131a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
-            <p style="color: #6b6475; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Kite ID</p>
-            <p style="color: #c9a96e; font-size: 28px; font-family: monospace; letter-spacing: 4px; margin: 0;">${kite_id}</p>
+        <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; background: #ffffff; color: #1e2532; padding: 40px; border-radius: 12px; border: 1px solid #e8f0f6;">
+          <h1 style="color: #d97d54; font-size: 28px; margin-bottom: 8px;">🪁 Your kite is in the sky</h1>
+          <p style="color: #798699; font-size: 14px; margin-bottom: 32px;">Flying towards <strong style="color:#1e2532;">${beloved_name}</strong></p>
+          <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+            <p style="color: #4a5668; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Kite ID</p>
+            <p style="color: #d97d54; font-size: 28px; font-family: monospace; letter-spacing: 4px; margin: 0;">${kite_id}</p>
           </div>
-          <p style="color: #9a9080; font-size: 14px; line-height: 1.8;">Use this ID anytime to check if your kite has been caught. Keep it safe — this is your only proof that your kite is flying.</p>
-          <hr style="border: none; border-top: 1px solid #2a2a3a; margin: 32px 0;" />
-          <p style="color: #4a4450; font-size: 12px;">KiteMail — Messages carried by the wind</p>
+          <p style="color: #798699; font-size: 14px; line-height: 1.8;">Use this ID anytime to check if your kite has been caught. Keep it safe — this is your only proof that your kite is flying.</p>
+          <hr style="border: none; border-top: 1px solid #e8f0f6; margin: 32px 0;" />
+          <p style="color: #798699; font-size: 12px;">KiteMail — Messages carried by the wind</p>
         </div>
       `
     });
