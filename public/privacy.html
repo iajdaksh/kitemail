@@ -27,7 +27,7 @@
       <div class="container-sm">
         <div class="section-tag">Legal</div>
         <h1 class="section-title">Privacy <em>Policy</em></h1>
-        <p class="section-sub" style="margin: 12px auto 0; text-align: center;">Last updated: January 2025</p>
+        <p class="section-sub" style="margin: 12px auto 0; text-align: center;">Last updated: June 5, 2026</p>
       </div>
     </div>
 
@@ -43,13 +43,14 @@
             <li><strong>Sender's date of birth:</strong> Stored hidden, used only as a search filter. Never shown to the recipient.</li>
             <li><strong>Sender's name/nickname:</strong> Optional, shown only if you choose not to be anonymous.</li>
             <li><strong>Sender's email:</strong> Optional, used only to send your Ticket ID. Never shared or used for marketing.</li>
+            <li><strong>Abuse-prevention data:</strong> We store a first-party device cookie, request IP address, browser user-agent, language, and referrer to investigate reports, reduce misuse, and block repeat abuse.</li>
           </ul>
 
           <h2>2. What We Do NOT Collect</h2>
           <ul>
             <li>We do not require account registration</li>
-            <li>We do not collect IP addresses for identification purposes</li>
-            <li>We do not use cookies for tracking</li>
+            <li>We do not use third-party advertising trackers</li>
+            <li>We do not use cross-site cookies for marketing</li>
             <li>We do not sell any data to third parties</li>
             <li>We do not run advertisements</li>
           </ul>
@@ -92,28 +93,73 @@
             <p>A message carried by the wind — meant only for someone who knows to look up.</p>
           </div>
           <div class="footer-col">
-            <h5>Navigate</h5>
+            <h5>Send</h5>
             <ul>
-              <li><a href="/">Home</a></li>
               <li><a href="/fly">Fly a Kite</a></li>
               <li><a href="/find">Find a Kite</a></li>
+              <li><a href="/ticket">Track Status</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Learn</h5>
+            <ul>
+              <li><a href="/about">About</a></li>
+              <li><a href="/safety">Safety Guidelines</a></li>
             </ul>
           </div>
           <div class="footer-col">
             <h5>Legal</h5>
             <ul>
-              <li><a href="/terms">Terms</a></li>
-              <li><a href="/privacy">Privacy</a></li>
-              <li><a href="/safety">Safety</a></li>
+              <li><a href="/terms">Terms of Use</a></li>
+              <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
           </div>
         </div>
+        <div class="footer-stats" id="stats-container" style="display: none;">
+          <div style="text-align: center; margin: 40px 0; padding: 24px 0; border-top: 1px solid rgba(201,169,110,0.1); border-bottom: 1px solid rgba(201,169,110,0.1);">
+            <p style="color: var(--muted); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;">Kites in the Sky</p>
+            <div style="display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;">
+              <div>
+                <p style="font-size: 28px; color: var(--gold); margin: 0; font-weight: 300;">
+                  <span id="total-flied">—</span>
+                </p>
+                <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0; letter-spacing: 0.5px;">Total Flied</p>
+              </div>
+              <div>
+                <p style="font-size: 28px; color: var(--gold); margin: 0; font-weight: 300;">
+                  <span id="total-caught">—</span>
+                </p>
+                <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0; letter-spacing: 0.5px;">Total Caught</p>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="footer-bottom">
-          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span></p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>No accounts. No ads. Just love.</p>
         </div>
       </div>
     </footer>
   </div>
   <script src="/js/app.js"></script>
+  <script>
+    // Fetch and display stats on page load
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        const stats = await response.json();
+        document.getElementById('total-flied').textContent = stats.total_kites_flied || 0;
+        document.getElementById('total-caught').textContent = stats.total_kites_caught || 0;
+        document.getElementById('stats-container').style.display = 'block';
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+    });
+  </script>
 </body>
 </html>

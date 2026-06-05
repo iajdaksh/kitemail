@@ -36,6 +36,11 @@ CREATE TABLE kites (
   sender_dob VARCHAR(5),            -- DD/MM, hidden from beloved
   sender_email VARCHAR(255),        -- optional, for ticket delivery
   is_anonymous BOOLEAN DEFAULT false,
+  sender_ip VARCHAR(64),            -- request IP for abuse handling
+  sender_user_agent TEXT,           -- browser/device fingerprinting-lite
+  sender_device_id VARCHAR(64),     -- first-party cookie ID
+  sender_accept_language VARCHAR(255),
+  sender_referrer TEXT,
 
   -- Status
   status VARCHAR(20) DEFAULT 'flying',  -- flying | caught
@@ -70,6 +75,8 @@ CREATE INDEX idx_kites_beloved ON kites (
 
 -- Index for kite_id lookup
 CREATE INDEX idx_kites_kite_id ON kites (kite_id);
+CREATE INDEX idx_kites_sender_ip ON kites (sender_ip);
+CREATE INDEX idx_kites_sender_device_id ON kites (sender_device_id);
 
 -- RLS Policies
 ALTER TABLE kites ENABLE ROW LEVEL SECURITY;
@@ -121,3 +128,12 @@ BEGIN
   UPDATE stats SET total_kites_caught = total_kites_caught + 1 WHERE id = 1;
 END;
 $$ LANGUAGE plpgsql;
+
+-- If your `kites` table already exists, run this migration block once:
+-- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_ip VARCHAR(64);
+-- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_user_agent TEXT;
+-- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_device_id VARCHAR(64);
+-- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_accept_language VARCHAR(255);
+-- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_referrer TEXT;
+-- CREATE INDEX IF NOT EXISTS idx_kites_sender_ip ON kites (sender_ip);
+-- CREATE INDEX IF NOT EXISTS idx_kites_sender_device_id ON kites (sender_device_id);

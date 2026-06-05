@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { nanoid } = require('nanoid');
 const nodemailer = require('nodemailer');
@@ -45,6 +46,99 @@ function normalize(str) {
   return str.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function parseCookies(cookieHeader = '') {
+  return cookieHeader.split(';').reduce((cookies, pair) => {
+    const [rawKey, ...rawValue] = pair.split('=');
+    const key = rawKey?.trim();
+    if (!key) return cookies;
+    cookies[key] = decodeURIComponent(rawValue.join('=').trim() || '');
+    return cookies;
+  }, {});
+}
+
+function setCookie(res, name, value, options = {}) {
+  const parts = [`${name}=${encodeURIComponent(value)}`];
+  if (options.maxAge) parts.push(`Max-Age=${options.maxAge}`);
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  if (options.httpOnly) parts.push('HttpOnly');
+  if (options.secure) parts.push('Secure');
+
+  const existing = res.getHeader('Set-Cookie');
+  const cookies = Array.isArray(existing) ? existing : existing ? [existing] : [];
+  res.setHeader('Set-Cookie', [...cookies, parts.join('; ')]);
+}
+
+function getOrCreateDeviceId(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  const existingId = cookies.km_device?.trim();
+  if (existingId) return existingId;
+
+  const deviceId = crypto.randomUUID();
+  setCookie(res, 'km_device', deviceId, {
+    maxAge: 60 * 60 * 24 * 365,
+    path: '/',
+    sameSite: 'Lax',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
+  });
+  return deviceId;
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.headers['x-real-ip'] || req.socket?.remoteAddress || req.ip || null;
+}
+
+function getRequestTracking(req, res) {
+  return {
+    sender_ip: getClientIp(req),
+    sender_user_agent: req.get('user-agent') || null,
+    sender_device_id: getOrCreateDeviceId(req, res),
+    sender_accept_language: req.get('accept-language') || null,
+    sender_referrer: req.get('referer') || req.get('referrer') || null
+  };
+}
+
+function isBlockedSender(tracking) {
+  const blockedIps = (process.env.BLOCKED_IPS || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+  const blockedDeviceIds = (process.env.BLOCKED_DEVICE_IDS || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+
+  return blockedIps.includes(tracking.sender_ip) || blockedDeviceIds.includes(tracking.sender_device_id);
+}
+
+async function insertKiteRecord(insertData) {
+  const attempt = await supabase.from('kites').insert([insertData]).select('kite_id').single();
+  if (!attempt.error) return attempt;
+
+  const trackingFields = [
+    'sender_ip',
+    'sender_user_agent',
+    'sender_device_id',
+    'sender_accept_language',
+    'sender_referrer'
+  ];
+  const isMissingTrackingColumn =
+    attempt.error.code === 'PGRST204' ||
+    trackingFields.some(field => String(attempt.error.message || '').includes(field));
+
+  if (!isMissingTrackingColumn) return attempt;
+
+  const fallbackData = { ...insertData };
+  trackingFields.forEach(field => delete fallbackData[field]);
+  console.warn('Tracking columns missing in database. Inserting kite without tracking metadata.');
+  return supabase.from('kites').insert([fallbackData]).select('kite_id').single();
+}
+
 // Calculate similarity score (0-1) between two strings
 function calculateSimilarity(str1, str2) {
   try {
@@ -54,9 +148,6 @@ function calculateSimilarity(str1, str2) {
     
     // Exact match
     if (s1 === s2) return 1;
-    
-    // Check if one contains the other
-    if (s1.includes(s2) || s2.includes(s1)) return 0.95;
     
     // Levenshtein distance based similarity
     const len1 = s1.length;
@@ -93,9 +184,27 @@ function calculateSimilarity(str1, str2) {
 // Helper: Get current stats
 async function getStats() {
   try {
-    const { data, error } = await supabase.from('stats').select('total_kites_flied, total_kites_caught').eq('id', 1).single();
-    if (error) throw error;
-    return data;
+    // Count total kites (flied), ignoring deleted ones
+    const { count: flied, error: err1 } = await supabase
+      .from('kites')
+      .select('*', { count: 'exact', head: true })
+      .neq('is_deleted', true);
+      
+    if (err1) throw err1;
+
+    // Count caught kites
+    const { count: caught, error: err2 } = await supabase
+      .from('kites')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'caught')
+      .neq('is_deleted', true);
+      
+    if (err2) throw err2;
+
+    return { 
+      total_kites_flied: flied || 0, 
+      total_kites_caught: caught || 0 
+    };
   } catch (err) {
     console.error('Error fetching stats:', err);
     return { total_kites_flied: 0, total_kites_caught: 0 };
@@ -207,7 +316,7 @@ function generateKiteLetterHTML(kite) {
         </div>
         
         <div class="salutation">
-          Dear <strong>${kite.beloved_name}</strong>,
+          Dear <strong>${kite.beloved_nickname || kite.beloved_name}</strong>,
         </div>
         
         <div class="message">${kite.message}</div>
@@ -219,6 +328,163 @@ function generateKiteLetterHTML(kite) {
         
         <div class="footer">KiteMail — Messages carried by the wind</div>
         <div class="kite-id">${kite.kite_id}</div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateKiteTicketHTML(kite) {
+  const sentAt = new Date(kite.created_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const caughtAt = kite.caught_at
+    ? new Date(kite.caught_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : null;
+  const statusLabel = kite.status === 'caught' ? 'Caught' : 'Flying';
+  const statusIcon = kite.status === 'caught' ? '💌' : '🪁';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${kite.kite_id} Ticket</title>
+      <style>
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          padding: 32px 16px;
+          background: #14111a;
+          color: #f5efe6;
+          font-family: Georgia, serif;
+        }
+        .ticket {
+          max-width: 620px;
+          margin: 0 auto;
+          background: linear-gradient(180deg, #211c2a 0%, #17131e 100%);
+          border: 1px solid rgba(201, 169, 110, 0.28);
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+        }
+        .top {
+          padding: 36px 36px 28px;
+          text-align: center;
+          border-bottom: 1px dashed rgba(201, 169, 110, 0.24);
+        }
+        .icon { font-size: 54px; margin-bottom: 10px; }
+        .eyebrow {
+          color: #c9a96e;
+          font-size: 12px;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+        h1 {
+          margin: 0 0 8px;
+          font-size: 38px;
+          font-weight: 500;
+        }
+        .sub {
+          margin: 0;
+          color: #b7a99a;
+          font-size: 15px;
+          line-height: 1.7;
+        }
+        .body { padding: 28px 36px 36px; }
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .row {
+          padding: 18px 20px;
+          border-radius: 18px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(201, 169, 110, 0.12);
+        }
+        .label {
+          color: #9a9080;
+          font-size: 11px;
+          letter-spacing: 1.8px;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+        .value {
+          color: #f5efe6;
+          font-size: 18px;
+          line-height: 1.5;
+        }
+        .mono {
+          color: #c9a96e;
+          font-family: "Courier New", monospace;
+          letter-spacing: 3px;
+        }
+        .full { grid-column: 1 / -1; }
+        .footer {
+          margin-top: 24px;
+          text-align: center;
+          color: #9a9080;
+          font-size: 12px;
+          letter-spacing: 0.4px;
+        }
+        @media print {
+          body { background: #ffffff; padding: 0; }
+          .ticket {
+            box-shadow: none;
+            max-width: none;
+            border-radius: 0;
+            border-color: #d8c7a7;
+          }
+        }
+        @media (max-width: 640px) {
+          .grid { grid-template-columns: 1fr; }
+          .top, .body { padding-left: 22px; padding-right: 22px; }
+          h1 { font-size: 30px; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="ticket">
+        <div class="top">
+          <div class="icon">${statusIcon}</div>
+          <div class="eyebrow">KiteMail Ticket</div>
+          <h1>Your kite is ${statusLabel.toLowerCase()}</h1>
+          <p class="sub">Keep this ticket safe to track your message in the sky.</p>
+        </div>
+        <div class="body">
+          <div class="grid">
+            <div class="row">
+              <div class="label">Kite ID</div>
+              <div class="value mono">${kite.kite_id}</div>
+            </div>
+            <div class="row">
+              <div class="label">Status</div>
+              <div class="value">${statusLabel}</div>
+            </div>
+            <div class="row full">
+              <div class="label">For</div>
+              <div class="value">${kite.beloved_name} (${kite.beloved_nickname})</div>
+            </div>
+            <div class="row">
+              <div class="label">Sent On</div>
+              <div class="value">${sentAt}</div>
+            </div>
+            <div class="row">
+              <div class="label">Caught On</div>
+              <div class="value">${caughtAt || 'Still flying'}</div>
+            </div>
+          </div>
+          <div class="footer">KiteMail — Messages carried by the wind</div>
+        </div>
       </div>
     </body>
     </html>
@@ -260,6 +526,11 @@ app.post('/api/fly', async (req, res) => {
       return res.status(400).json({ error: 'Date must be in DD/MM format.' });
     }
 
+    const tracking = getRequestTracking(req, res);
+    if (isBlockedSender(tracking)) {
+      return res.status(403).json({ error: 'This device is blocked from sending new kites.' });
+    }
+
     const kite_id = generateKiteId();
 
     const insertData = {
@@ -276,23 +547,17 @@ app.post('/api/fly', async (req, res) => {
       is_anonymous: Boolean(is_anonymous),
       sender_name: is_anonymous ? null : (sender_name?.trim() || null),
       sender_nickname: is_anonymous ? null : (sender_nickname?.trim() || null),
-      status: 'flying'
+      status: 'flying',
+      ...tracking
     };
 
-    const { data, error } = await supabase.from('kites').insert([insertData]).select('kite_id').single();
+    const { data, error } = await insertKiteRecord(insertData);
 
     if (error) throw error;
 
     // Send ticket email if email provided
     if (sender_email && transporter) {
       await sendTicketEmail(sender_email, kite_id, beloved_name);
-    }
-
-    // Increment total kites flied counter
-    try {
-      await supabase.rpc('increment_kites_flied');
-    } catch (err) {
-      console.error('Error incrementing kites flied:', err);
     }
 
     return res.json({ success: true, kite_id });
@@ -310,6 +575,12 @@ app.post('/api/find', async (req, res) => {
 
     if (!beloved_name || !beloved_nickname || !beloved_dob) {
       return res.status(400).json({ error: 'Name, nickname and date of birth are required.' });
+    }
+    
+    // Validate DOB format to prevent silent mismatch
+    const dobRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/;
+    if (!dobRegex.test(beloved_dob)) {
+      return res.status(400).json({ error: 'Date must be in DD/MM format (e.g. 05/09).' });
     }
 
     console.log(`[FIND] Searching for: ${beloved_name} / ${beloved_nickname} / ${beloved_dob}`);
@@ -338,8 +609,8 @@ app.post('/api/find', async (req, res) => {
       return res.json({ found: false, kites: [] });
     }
 
-    // Filter out deleted kites and score by similarity (20% error tolerance = 80% match threshold)
-    const threshold = 0.80; // 80% similarity threshold (20% typo tolerance)
+    // Filter out deleted kites and score by similarity
+    const threshold = 0.70; // 70% similarity threshold (30% typo tolerance)
     const activeKites = [];
     
     for (const k of data) {
@@ -443,13 +714,6 @@ app.post('/api/catch', async (req, res) => {
     const now = new Date().toISOString();
     await supabase.from('kites').update({ status: 'caught', caught_at: now }).eq('id', kite_db_id);
 
-    // Increment total kites caught counter
-    try {
-      await supabase.rpc('increment_kites_caught');
-    } catch (err) {
-      console.error('Error incrementing kites caught:', err);
-    }
-
     return res.json({
       success: true,
       message: kite.message,
@@ -530,6 +794,31 @@ app.get('/api/download/:kite_id', async (req, res) => {
 
   } catch (err) {
     console.error('Download error:', err);
+    return res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// GET /api/ticket-download/:kite_id — Download tracking ticket as HTML
+app.get('/api/ticket-download/:kite_id', async (req, res) => {
+  try {
+    const { kite_id } = req.params;
+
+    const { data: kite, error } = await supabase
+      .from('kites')
+      .select('kite_id, beloved_name, beloved_nickname, status, created_at, caught_at')
+      .eq('kite_id', kite_id.toUpperCase())
+      .single();
+
+    if (error || !kite) {
+      return res.status(404).json({ error: 'Ticket not found.' });
+    }
+
+    const html = generateKiteTicketHTML(kite);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${kite.kite_id}-ticket.html"`);
+    return res.send(html);
+  } catch (err) {
+    console.error('Ticket download error:', err);
     return res.status(500).json({ error: 'Something went wrong.' });
   }
 });
