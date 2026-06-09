@@ -363,6 +363,7 @@ function generateKiteTicketHTML(kite) {
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${kite.kite_id} Ticket</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500&family=Outfit:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }
@@ -494,6 +495,23 @@ function generateKiteTicketHTML(kite) {
           <div class="footer">KiteMail — Messages carried by the wind</div>
         </div>
       </div>
+      <script>
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            const element = document.querySelector('.ticket');
+            const originalShadow = element.style.boxShadow;
+            element.style.boxShadow = 'none'; // Temporarily hide shadow for a cleaner PNG bounding box
+            html2canvas(element, { scale: 2, backgroundColor: null }).then(canvas => {
+              element.style.boxShadow = originalShadow;
+              const link = document.createElement('a');
+              link.href = canvas.toDataURL('image/png');
+              link.download = '${kite.kite_id}-ticket.png';
+              link.click();
+              setTimeout(() => window.close(), 500);
+            });
+          }, 500);
+        });
+      </script>
     </body>
     </html>
   `;
@@ -806,7 +824,7 @@ app.get('/api/download/:kite_id', async (req, res) => {
   }
 });
 
-// GET /api/ticket-download/:kite_id — Download tracking ticket as HTML
+// GET /api/ticket-download/:kite_id — Download tracking ticket as PNG
 app.get('/api/ticket-download/:kite_id', async (req, res) => {
   try {
     const { kite_id } = req.params;
@@ -822,9 +840,8 @@ app.get('/api/ticket-download/:kite_id', async (req, res) => {
     }
 
     const html = generateKiteTicketHTML(kite);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${kite.kite_id}-ticket.html"`);
-    return res.send(html);
+    res.type('text/html');
+    res.send(html);
   } catch (err) {
     console.error('Ticket download error:', err);
     return res.status(500).json({ error: 'Something went wrong.' });

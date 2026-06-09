@@ -335,7 +335,7 @@
 
           <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px;">
             <button class="btn btn-outline" onclick="copyKiteId()">📋 Copy Kite ID</button>
-            <a href="#" class="btn btn-ghost" id="downloadTicketLink" download>⬇ Download Ticket</a>
+            <a href="#" class="btn btn-ghost" id="downloadTicketLink" target="_blank">⬇ Download Ticket</a>
             <a href="/ticket" class="btn btn-ghost" id="trackLink">🎫 Track Status</a>
           </div>
 
@@ -351,20 +351,15 @@
     </section>
 
     <!-- Hidden Ticket Template for PNG Download -->
-    <div id="pngTicketTemplate" style="position: fixed; top: -9999px; left: -9999px; width: 420px; background: #ffffff; padding: 40px; border-radius: 24px; text-align: center; font-family: 'Outfit', sans-serif; color: #1e2532; border: 1px solid rgba(0,0,0,0.08); box-sizing: border-box;">
-      <div style="font-family: 'Bodoni Moda', serif; font-size: 32px; color: #1e2532; margin-bottom: 24px; font-weight: 400;"><span style="font-size: 28px;">🪁</span> Kite<span style="color: #d97d54;">Mail</span></div>
-      <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #798699; margin-bottom: 8px;">Your Kite ID</div>
-      <div id="dlKiteId" style="font-family: monospace; font-size: 38px; color: #d97d54; letter-spacing: 4px; margin-bottom: 24px;"></div>
-      
-      <div style="display: flex; justify-content: space-between; text-align: left; margin-bottom: 32px; padding-top: 24px; border-top: 1px dashed rgba(0,0,0,0.1);">
-        <div>
-          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #798699; margin-bottom: 4px;">For</div>
-          <div id="dlBeloved" style="font-size: 18px; font-weight: 500;"></div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #798699; margin-bottom: 4px;">Date</div>
-          <div id="dlDate" style="font-size: 18px; font-weight: 500;"></div>
-        </div>
+    <div id="pngTicketTemplate" style="position: fixed; top: -9999px; left: -9999px; width: 420px; background: #ffffff; padding: 48px 32px; border-radius: 24px; text-align: center; font-family: 'Outfit', sans-serif; color: #1e2532; border: 1px solid rgba(0,0,0,0.08); box-sizing: border-box;">
+      <div style="font-size: 64px; margin-bottom: 24px;">🪁</div>
+      <h2 style="font-family: 'Bodoni Moda', serif; font-size: 36px; color: #1e2532; margin: 0 0 8px; font-weight: 400;">Your kite is in the sky</h2>
+      <p style="color: #4a5668; font-size: 14px; margin: 0 0 32px;">It's flying, waiting for the right hands to catch it.</p>
+
+      <div style="background: #ffffff; border: 1px solid rgba(201,169,110,0.4); border-radius: 12px; padding: 24px; margin: 0 auto 24px; max-width: 320px;">
+        <div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #798699; margin-bottom: 8px;">Your Kite ID</div>
+        <div id="dlKiteId" style="font-family: monospace; font-size: 32px; letter-spacing: 5px; color: #d97d54;"></div>
+        <div style="font-size: 11px; color: #798699; margin-top: 10px;">Save this ID to track when your kite gets caught.</div>
       </div>
       
       <div style="display: flex; justify-content: center; margin-bottom: 16px;">
@@ -531,11 +526,9 @@
         document.getElementById('successPanel').classList.add('show');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Generate and Auto-Download PNG Ticket with QR Code
+        // Generate and Auto-Download PNG Ticket
         try {
           document.getElementById('dlKiteId').textContent = currentKiteId;
-          document.getElementById('dlBeloved').textContent = payload.beloved_name;
-          document.getElementById('dlDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
           const qrContainer = document.getElementById('qrcode');
           qrContainer.innerHTML = '';
@@ -553,7 +546,7 @@
             html2canvas(document.getElementById('pngTicketTemplate'), { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
               const link = document.createElement('a');
               link.href = canvas.toDataURL('image/png');
-              link.download = `KiteTicket-${currentKiteId}.png`;
+              link.download = `${currentKiteId}-ticket.png`;
               link.click();
             });
           }, 600); // 600ms delay to ensure QR code finishes rendering
