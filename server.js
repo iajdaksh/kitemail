@@ -218,6 +218,7 @@ function generateKiteLetterHTML(kite) {
     <html>
     <head>
       <meta charset="utf-8">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;0,6..96,400;1,6..96,300;1,6..96,400&display=swap');
         body { 
@@ -232,14 +233,13 @@ function generateKiteLetterHTML(kite) {
         }
         .letter {
           width: 612px;
-          height: 792px;
+          min-height: 792px;
       background: #ffffff;
       color: #1e2532;
           padding: 40px 44px 34px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.08);
           box-sizing: border-box;
           position: relative;
-          overflow: hidden;
           display: flex;
           flex-direction: column;
         }
@@ -322,6 +322,19 @@ function generateKiteLetterHTML(kite) {
           <div class="sender-name">${kite.is_anonymous ? 'Anonymous' : (kite.sender_name || kite.sender_nickname)}</div>
         </div>
       </div>
+      <script>
+        window.addEventListener('load', () => {
+          const element = document.querySelector('.letter');
+          const opt = {
+            margin:       0,
+            filename:     'Kite-${kite.kite_id}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'pt', format: 'letter', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(element).save();
+        });
+      </script>
     </body>
     </html>
   `;
@@ -764,7 +777,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// GET /api/download/:kite_id — Download kite as PNG
+// GET /api/download/:kite_id — Download kite as PDF
 app.get('/api/download/:kite_id', async (req, res) => {
   try {
     const { kite_id } = req.params;
