@@ -352,10 +352,17 @@
           <div style="margin-bottom: 32px;">
             <h3 class="form-section-title">⏳ Advanced Delivery (Optional)</h3>
             
-            <div class="form-group" style="max-width: 220px; margin-top: 16px;">
-              <label class="form-label">Time Capsule (Available After)</label>
-              <input type="date" id="availableAfter" class="form-input" />
-              <p class="form-hint">Kite cannot be caught until this date.</p>
+            <div class="form-row" style="margin-top: 16px;">
+              <div class="form-group">
+                <label class="form-label">Kite Fly On</label>
+                <input type="date" id="availableAfter" class="form-input" />
+                <p class="form-hint">Kite stays hidden and cannot be caught until this date.</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kite Down On</label>
+                <input type="date" id="expiresAt" class="form-input" />
+                <p class="form-hint">Kite comes down and is permanently removed after this date.</p>
+              </div>
             </div>
 
             <div class="anon-section" style="margin-top: 24px;">
@@ -620,6 +627,7 @@
         is_anonymous: isAnon,
         is_public: document.getElementById('publicSkyToggle').checked,
         available_after: document.getElementById('availableAfter').value,
+        expires_at: document.getElementById('expiresAt').value,
         theme_color: 'default',
         bg_color: selectedBg,
         text_color: selectedText,

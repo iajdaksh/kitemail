@@ -176,6 +176,16 @@ async function cleanupOldKites() {
   lastCleanup = now;
 
   try {
+    await supabase
+      .from('kites')
+      .delete()
+      .eq('status', 'flying')
+      .lt('expires_at', new Date().toISOString());
+  } catch (err) {
+    console.error('Expired kite cleanup error:', err);
+  }
+
+  try {
     const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString();
     
     const { error } = await supabase
@@ -581,7 +591,7 @@ app.post('/api/fly', async (req, res) => {
       question_2, answer_2, hint_2,
       question_3, answer_3, hint_3,
       sender_name, sender_nickname, sender_dob,
-      sender_email, is_anonymous, available_after, is_public, theme_color, bg_color, text_color, font_family
+      sender_email, is_anonymous, available_after, expires_at, is_public, theme_color, bg_color, text_color, font_family
     } = req.body;
 
     // Validation
@@ -638,6 +648,7 @@ app.post('/api/fly', async (req, res) => {
       font_family: font_family || 'Bodoni Moda',
       is_public: Boolean(is_public),
       available_after: available_after ? new Date(available_after).toISOString() : null,
+      expires_at: expires_at ? new Date(expires_at).toISOString() : null,
       sender_location,
       ...tracking
     };
@@ -678,7 +689,7 @@ app.post('/api/find', async (req, res) => {
 
     let query = supabase
       .from('kites')
-      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted, beloved_name, beloved_nickname')
+      .select('id, kite_id, question_1, hint_1, question_2, hint_2, question_3, hint_3, created_at, status, is_anonymous, sender_name, sender_nickname, sender_dob, is_deleted, beloved_name, beloved_nickname, expires_at')
       .eq('beloved_dob', beloved_dob.trim())
       .eq('status', 'flying');
 
@@ -703,11 +714,17 @@ app.post('/api/find', async (req, res) => {
     // Filter out deleted kites and score by similarity
     const threshold = 0.70; // 70% similarity threshold (30% typo tolerance)
     const activeKites = [];
+    const now = new Date();
     
     for (const k of data) {
       try {
         if (k.is_deleted) {
           console.log(`[FIND] Skipping deleted kite: ${k.id}`);
+          continue;
+        }
+
+        if (k.expires_at && new Date(k.expires_at) < now) {
+          console.log(`[FIND] Skipping expired kite: ${k.id}`);
           continue;
         }
         
@@ -791,6 +808,10 @@ app.post('/api/catch', async (req, res) => {
     if (kite.available_after && new Date(kite.available_after) > new Date()) {
       const dateStr = new Date(kite.available_after).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       return res.json({ success: false, correct: 0, message: `This kite is trapped in an updraft. The wind won't let it land until ${dateStr}.` });
+    }
+
+    if (kite.expires_at && new Date(kite.expires_at) < new Date()) {
+      return res.json({ success: false, correct: 0, message: 'This kite has already come down and is no longer available.' });
     }
 
     // Check answers — need 2 out of 3 correct
