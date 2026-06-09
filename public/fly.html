@@ -127,6 +127,7 @@
       <li><a href="/about">About</a></li>
       <li><a href="/safety">Safety</a></li>
       <li><a href="/ticket">Track Kite</a></li>
+      <li><a href="/sky">The Night Sky</a></li>
       <li><a href="/find" class="nav-cta">Find Your Kite</a></li>
     </ul>
     <button class="nav-hamburger">☰</button>
@@ -169,6 +170,32 @@
               <label class="form-label">Their Birthday <span class="required">*</span></label>
               <input type="text" id="belovedDob" class="form-input" placeholder="DD/MM" maxlength="5" autocomplete="off" />
               <p class="form-hint">Format: DD/MM — day and month only.</p>
+            </div>
+          </div>
+
+          <div class="divider" style="margin: 28px 0;"></div>
+
+          <!-- CUSTOMIZATION SECTION -->
+          <div style="margin-bottom: 32px;">
+            <h3 class="form-section-title">🎨 Customize Your Kite</h3>
+            <p class="form-section-sub">Choose a color for your ticket and PDF letter.</p>
+            <div class="theme-selector" style="display: flex; gap: 16px; margin-top: 12px;">
+              <label style="cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                <input type="radio" name="theme_color" value="default" checked style="display:none;" onchange="updateThemePreview(this)">
+                <span class="theme-circle" style="width:36px; height:36px; border-radius:50%; background:#d97d54; border: 2px solid transparent; transition:0.2s; box-shadow: 0 0 0 1px #d97d54; transform: scale(1.15);"></span>
+              </label>
+              <label style="cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                <input type="radio" name="theme_color" value="midnight" style="display:none;" onchange="updateThemePreview(this)">
+                <span class="theme-circle" style="width:36px; height:36px; border-radius:50%; background:#4f6187; border: 2px solid transparent; transition:0.2s;"></span>
+              </label>
+              <label style="cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                <input type="radio" name="theme_color" value="sunset" style="display:none;" onchange="updateThemePreview(this)">
+                <span class="theme-circle" style="width:36px; height:36px; border-radius:50%; background:#e66a6a; border: 2px solid transparent; transition:0.2s;"></span>
+              </label>
+              <label style="cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                <input type="radio" name="theme_color" value="forest" style="display:none;" onchange="updateThemePreview(this)">
+                <span class="theme-circle" style="width:36px; height:36px; border-radius:50%; background:#6d8c6f; border: 2px solid transparent; transition:0.2s;"></span>
+              </label>
             </div>
           </div>
 
@@ -264,6 +291,30 @@
           </div>
 
           <div class="divider" style="margin: 28px 0;"></div>
+
+          <!-- ADVANCED DELIVERY (Time Capsule & Public) -->
+          <div style="margin-bottom: 32px;">
+            <h3 class="form-section-title">⏳ Advanced Delivery (Optional)</h3>
+            
+            <div class="form-group" style="max-width: 220px; margin-top: 16px;">
+              <label class="form-label">Time Capsule (Available After)</label>
+              <input type="date" id="availableAfter" class="form-input" />
+              <p class="form-hint">Kite cannot be caught until this date.</p>
+            </div>
+
+            <div class="anon-section" style="margin-top: 24px;">
+              <div class="anon-toggle-row">
+                <div class="anon-toggle-info">
+                  <h5>✨ Let it join the Night Sky</h5>
+                  <p>Allow the anonymous text of your message to float in our public gallery.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="publicSkyToggle" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
 
           <!-- SENDER SECTION -->
           <div style="margin-bottom: 32px;">
@@ -432,6 +483,16 @@
   <script>
     let currentKiteId = '';
 
+    function updateThemePreview(radio) {
+      document.querySelectorAll('.theme-circle').forEach(el => {
+        el.style.transform = 'scale(1)';
+        el.style.boxShadow = 'none';
+      });
+      const activeCircle = radio.nextElementSibling;
+      activeCircle.style.transform = 'scale(1.15)';
+      activeCircle.style.boxShadow = `0 0 0 1px ${activeCircle.style.backgroundColor}`;
+    }
+
     // Fetch and display stats on page load
     async function loadStats() {
       try {
@@ -478,6 +539,9 @@
         sender_dob: document.getElementById('senderDob').value.trim(),
         sender_email: document.getElementById('senderEmail').value.trim(),
         is_anonymous: isAnon,
+        is_public: document.getElementById('publicSkyToggle').checked,
+        available_after: document.getElementById('availableAfter').value,
+        theme_color: document.querySelector('input[name="theme_color"]:checked').value
       };
 
       if (!isAnon) {

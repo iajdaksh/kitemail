@@ -137,3 +137,12 @@ $$ LANGUAGE plpgsql;
 -- ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_referrer TEXT;
 -- CREATE INDEX IF NOT EXISTS idx_kites_sender_ip ON kites (sender_ip);
 -- CREATE INDEX IF NOT EXISTS idx_kites_sender_device_id ON kites (sender_device_id);
+
+-- New Feature Columns
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS reply_message TEXT;
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS available_after TIMESTAMP WITH TIME ZONE;
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS theme_color VARCHAR(20) DEFAULT 'default';
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false;
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS sender_location JSONB;
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS catcher_location JSONB;
+ALTER TABLE kites ADD COLUMN IF NOT EXISTS flight_distance_km INT;

@@ -403,9 +403,21 @@
           </p>
           <div class="message-body">${escapeHtml(data.message)}</div>
           <div class="message-from">${fromText}</div>
-          <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+
+          <div class="divider" style="margin: 32px 0;"></div>
+
+          <div id="reply-section-${idx}">
+            <h4 style="font-family: 'Bodoni Moda', serif; font-size: 18px; color: var(--cream); margin-bottom: 8px; font-weight: 400;">🌬️ Send a Breeze Back?</h4>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Send a short, one-time anonymous reply to the sender. They will see it when they track their kite.</p>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <textarea id="reply-msg-${idx}" class="form-textarea" rows="3" placeholder="Write your reply..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="sendReply(${idx}, '${foundKites[idx].kite_id}')">Send Breeze</button>
+          </div>
+
+          <div style="margin-top:32px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
             <a href="/fly" class="btn btn-outline">🪁 Send one back</a>
-            <button class="btn btn-ghost" onclick="downloadKiteAsImage('${foundKites[idx].kite_id}')">📥 Download</button>
+            <a href="/api/download/${foundKites[idx].kite_id}" target="_blank" class="btn btn-ghost">📥 Download as PDF</a>
             <a href="/" class="btn btn-ghost">← Home</a>
           </div>
         `;
@@ -419,47 +431,31 @@
       }
     }
 
-    async function downloadKiteAsImage(kiteId) {
+    async function sendReply(idx, kiteId) {
+      const replyMessage = document.getElementById(`reply-msg-${idx}`).value.trim();
+      if (!replyMessage) return;
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Sending...';
+
       try {
-        // Load html2canvas library
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        document.head.appendChild(script);
-        
-        script.onload = async () => {
-          const response = await fetch(`/api/download/${kiteId}`);
-          if (!response.ok) throw new Error('Failed to download');
-          const html = await response.text();
-          
-          // Create temporary container
-          const temp = document.createElement('div');
-          temp.innerHTML = html;
-          temp.style.position = 'fixed';
-          temp.style.top = '-9999px';
-          temp.style.left = '-9999px';
-          document.body.appendChild(temp);
-          
-          // Wait for content to render
-          setTimeout(async () => {
-            const canvas = await html2canvas(temp.querySelector('.letter'), {
-              scale: 2,
-              backgroundColor: '#ffffff',
-              logging: false
-            });
-            
-            // Download
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL('image/png');
-            link.download = `kite-${kiteId}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            document.body.removeChild(temp);
-          }, 500);
-        };
+        const res = await fetch('/api/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kite_id: kiteId, reply_message: replyMessage })
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) throw new Error(data.error || 'Failed to send reply.');
+
+        const replySection = document.getElementById(`reply-section-${idx}`);
+        replySection.innerHTML = `<p style="font-size: 13px; color: #70c880; text-align: center;">✓ Your breeze has been sent back into the sky.</p>`;
+
       } catch (err) {
-        alert('Could not download kite. Please try again.');
-        console.error('Download error:', err);
+        btn.disabled = false;
+        btn.innerHTML = 'Send Breeze';
+        alert(err.message);
       }
     }
 

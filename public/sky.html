@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Night Sky — KiteMail</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .sky-hero { padding: 130px 0 40px; text-align: center; }
+    .sky-hero h1 { font-family: 'Bodoni Moda', serif; font-size: clamp(36px, 6vw, 64px); font-weight: 300; color: var(--cream); }
+    .sky-hero h1 em { font-style: italic; color: var(--gold); }
+    
+    .masonry {
+      column-count: 1;
+      column-gap: 24px;
+      padding-bottom: 80px;
+    }
+    @media (min-width: 640px) { .masonry { column-count: 2; } }
+    @media (min-width: 1024px) { .masonry { column-count: 3; } }
+
+    .sky-kite {
+      break-inside: avoid;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 24px;
+      position: relative;
+      transition: transform 0.4s ease;
+    }
+    .sky-kite:hover { transform: translateY(-4px); }
+    
+    .sky-msg {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--cream);
+      white-space: pre-wrap;
+      font-style: italic;
+    }
+    .sky-date {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/safety">Safety</a></li>
+      <li><a href="/ticket">Track Kite</a></li>
+      <li><a href="/sky" style="color: var(--cream);">The Night Sky</a></li>
+      <li><a href="/find" class="nav-cta">Find Your Kite</a></li>
+    </ul>
+    <button class="nav-hamburger">☰</button>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="sky-hero fade-in fade-in-1">
+      <div class="container">
+        <div class="section-tag">Public Gallery</div>
+        <h1>The <em>Night Sky</em></h1>
+        <p style="color: var(--muted-2); margin-top: 12px;">Anonymous messages drifting in the wind. Read what others have sent.</p>
+      </div>
+    </div>
+
+    <div class="container fade-in fade-in-2">
+      <div class="masonry" id="skyGrid">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const THEMES = {
+      default: '#d97d54',
+      midnight: '#4f6187',
+      sunset: '#e66a6a',
+      forest: '#6d8c6f'
+    };
+
+    async function loadSky() {
+      try {
+        const res = await fetch('/api/sky');
+        const kites = await res.json();
+        
+        const grid = document.getElementById('skyGrid');
+        grid.innerHTML = kites.map(k => {
+          const dateStr = new Date(k.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const color = THEMES[k.theme_color] || THEMES.default;
+          return `
+            <div class="sky-kite" style="border-top: 3px solid ${color};">
+              <div class="sky-msg">"${k.message}"</div>
+              <div class="sky-date"><span>KiteMail</span> <span>${dateStr}</span></div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) { console.error(err); }
+    }
+    document.addEventListener('DOMContentLoaded', loadSky);
+  </script>
+</body>
+</html>

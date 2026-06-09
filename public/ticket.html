@@ -99,6 +99,16 @@
     .timeline-dot.pending { background: var(--bg-3); border: 1px solid var(--border); }
     .timeline-content h5 { font-size: 13px; color: var(--cream); margin-bottom: 3px; }
     .timeline-content p { font-size: 11px; color: var(--muted); margin: 0; }
+
+    .reply-box {
+      background: rgba(255,255,255,0.03);
+      border-left: 3px solid var(--gold);
+      padding: 16px;
+      margin-top: 24px;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -110,6 +120,7 @@
     <ul class="nav-links">
       <li><a href="/about">About</a></li>
       <li><a href="/safety">Safety</a></li>
+      <li><a href="/sky">The Night Sky</a></li>
       <li><a href="/find">Find a Kite</a></li>
       <li><a href="/fly" class="nav-cta">Fly a Kite</a></li>
     </ul>
@@ -161,10 +172,15 @@
               <span class="ticket-row-label">Released On</span>
               <span class="ticket-row-value" id="trSentAt">—</span>
             </div>
+            <div class="ticket-row" id="trDistanceRow" style="display: none;">
+              <span class="ticket-row-label">Distance Flown</span>
+              <span class="ticket-row-value" id="trDistance">—</span>
+            </div>
 
             <div class="ticket-dashed" style="margin: 16px -32px;"></div>
 
             <div class="timeline" id="ticketTimeline"></div>
+            <div id="replyContainer"></div>
           </div>
         </div>
 
@@ -260,6 +276,13 @@
       }
     });
 
+    const THEMES = {
+      default: { primary: '#d97d54', bg: 'linear-gradient(135deg, #ffffff, #e8f0f6)' },
+      midnight: { primary: '#4f6187', bg: 'linear-gradient(135deg, #ffffff, #f0f3f7)' },
+      sunset: { primary: '#e66a6a', bg: 'linear-gradient(135deg, #ffffff, #fff5f5)' },
+      forest: { primary: '#6d8c6f', bg: 'linear-gradient(135deg, #ffffff, #f2f7f2)' }
+    };
+
     async function trackKite() {
       const kiteId = document.getElementById('kiteIdInput').value.trim().toUpperCase();
       if (!kiteId) return showAlert('ticketAlert', 'Please enter your Kite ID.', 'error');
@@ -284,17 +307,38 @@
         const kiteIcon = document.getElementById('ticketKiteIcon');
         const statusText = document.getElementById('ticketStatusText');
 
+        // Apply Theme
+        const theme = THEMES[data.theme_color] || THEMES.default;
+        document.getElementById('ticketTop').style.background = theme.bg;
+        document.getElementById('trKiteId').style.color = theme.primary;
+        
+        const distanceRow = document.getElementById('trDistanceRow');
+        const replyContainer = document.getElementById('replyContainer');
+
         if (isCaught) {
           badge.innerHTML = '<span class="badge badge-caught">✓ Kite Caught</span>';
           kiteIcon.textContent = '💌';
           kiteIcon.classList.remove('flying');
           kiteIcon.classList.add('caught');
           statusText.textContent = 'Your kite has been opened.';
+
+          if (data.flight_distance_km) {
+             distanceRow.style.display = 'flex';
+             document.getElementById('trDistance').textContent = `${data.flight_distance_km.toLocaleString()} km`;
+          }
+          
+          if (data.reply_message) {
+            replyContainer.innerHTML = `<div class="reply-box"><div style="font-size:11px; color:#798699; margin-bottom:6px; font-style:normal; text-transform:uppercase; letter-spacing:1px;">A breeze sent back</div>"${data.reply_message}"</div>`;
+          } else {
+            replyContainer.innerHTML = '';
+          }
         } else {
           badge.innerHTML = '<span class="badge badge-flying">🪁 Still Flying</span>';
           kiteIcon.textContent = '🪁';
           kiteIcon.classList.add('flying');
           statusText.textContent = 'Your kite is still in the sky, waiting to be caught.';
+          distanceRow.style.display = 'none';
+          replyContainer.innerHTML = '';
         }
 
         // Timeline

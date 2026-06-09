@@ -36,6 +36,34 @@ if (process.env.SMTP_USER && process.env.SMTP_PASS) {
   });
 }
 
+// Kite Themes Configuration
+const THEMES = {
+  default: { primary: '#d97d54', bg: '#f2f7fa', gradient: 'rgba(217, 125, 84, 0.05)' },
+  midnight: { primary: '#4f6187', bg: '#f0f3f7', gradient: 'rgba(79, 97, 135, 0.05)' },
+  sunset: { primary: '#e66a6a', bg: '#fff5f5', gradient: 'rgba(230, 106, 106, 0.05)' },
+  forest: { primary: '#6d8c6f', bg: '#f2f7f2', gradient: 'rgba(109, 140, 111, 0.05)' }
+};
+function getTheme(name) { return THEMES[name] || THEMES.default; }
+
+// Geolocation Helpers
+async function getGeoLocation(ip) {
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.')) return null;
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city,lat,lon`);
+    const data = await res.json();
+    if (data.status === 'success') return { city: data.city, country: data.country, lat: data.lat, lon: data.lon };
+  } catch (e) { console.error('Geo error:', e.message); }
+  return null;
+}
+
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
+}
+
 // Generate Kite ID
 function generateKiteId() {
   return 'KT-' + nanoid(8).toUpperCase();
@@ -236,6 +264,7 @@ async function getStats() {
 
 // Helper: Generate letter-style HTML for kite
 function generateKiteLetterHTML(kite) {
+  const t = getTheme(kite.theme_color);
   return `
     <!DOCTYPE html>
     <html>
@@ -247,7 +276,7 @@ function generateKiteLetterHTML(kite) {
         body { 
           margin: 0; 
           padding: 40px; 
-      background: #f2f7fa; 
+      background: ${t.bg}; 
           font-family: 'Bodoni Moda', Georgia, serif; 
           display: flex; 
           justify-content: center; 
@@ -270,7 +299,7 @@ function generateKiteLetterHTML(kite) {
           content: '';
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(135deg, rgba(217, 125, 84, 0.05), transparent);
+      background: linear-gradient(135deg, ${t.gradient}, transparent);
           pointer-events: none;
         }
         .header {
@@ -283,7 +312,7 @@ function generateKiteLetterHTML(kite) {
         h1 { 
           font-size: 24px; 
           margin: 6px 0; 
-      color: #d97d54;
+      color: ${t.primary};
           font-weight: 300;
           letter-spacing: 2px;
         }
@@ -319,7 +348,7 @@ function generateKiteLetterHTML(kite) {
         }
         .kite-id {
           font-size: 12px;
-      color: #d97d54;
+      color: ${t.primary};
           font-family: monospace;
           letter-spacing: 2px;
           white-space: nowrap;
@@ -364,6 +393,7 @@ function generateKiteLetterHTML(kite) {
 }
 
 function generateKiteTicketHTML(kite) {
+  const t = getTheme(kite.theme_color);
   const sentAt = new Date(kite.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -393,7 +423,7 @@ function generateKiteTicketHTML(kite) {
         body {
           margin: 0;
           padding: 32px 16px;
-      background: #f2f7fa;
+      background: ${t.bg};
       color: #1e2532;
           font-family: 'Outfit', sans-serif;
         }
@@ -413,7 +443,7 @@ function generateKiteTicketHTML(kite) {
         }
         .icon { font-size: 54px; margin-bottom: 10px; }
         .eyebrow {
-      color: #d97d54;
+      color: ${t.primary};
           font-size: 12px;
           letter-spacing: 3px;
           text-transform: uppercase;
@@ -456,7 +486,7 @@ function generateKiteTicketHTML(kite) {
           line-height: 1.5;
         }
         .mono {
-      color: #d97d54;
+      color: ${t.primary};
           font-family: "Courier New", monospace;
           letter-spacing: 3px;
         }
@@ -552,7 +582,7 @@ app.post('/api/fly', async (req, res) => {
       question_2, answer_2, hint_2,
       question_3, answer_3, hint_3,
       sender_name, sender_nickname, sender_dob,
-      sender_email, is_anonymous
+      sender_email, is_anonymous, available_after, is_public, theme_color
     } = req.body;
 
     // Validation
@@ -581,6 +611,9 @@ app.post('/api/fly', async (req, res) => {
     }
 
     const kite_id = generateKiteId();
+    
+    // Get optional location data
+    const sender_location = await getGeoLocation(tracking.sender_ip);
 
     const insertData = {
       kite_id,
@@ -597,6 +630,10 @@ app.post('/api/fly', async (req, res) => {
       sender_name: is_anonymous ? null : (sender_name?.trim() || null),
       sender_nickname: is_anonymous ? null : (sender_nickname?.trim() || null),
       status: 'flying',
+      theme_color: theme_color || 'default',
+      is_public: Boolean(is_public),
+      available_after: available_after ? new Date(available_after).toISOString() : null,
+      sender_location,
       ...tracking
     };
 
@@ -745,6 +782,12 @@ app.post('/api/catch', async (req, res) => {
       return res.status(404).json({ error: 'Kite not found.' });
     }
 
+    // Time Capsule Check
+    if (kite.available_after && new Date(kite.available_after) > new Date()) {
+      const dateStr = new Date(kite.available_after).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      return res.json({ success: false, correct: 0, message: `This kite is trapped in an updraft. The wind won't let it land until ${dateStr}.` });
+    }
+
     // Check answers — need 2 out of 3 correct
     let correct = 0;
     const correctAnswers = [kite.answer_1, kite.answer_2, kite.answer_3];
@@ -759,9 +802,23 @@ app.post('/api/catch', async (req, res) => {
       return res.json({ success: false, correct, message: 'Not enough correct answers. Try again.' });
     }
 
+    // Geolocation and Distance Logic
+    const catcherIp = getClientIp(req);
+    const catcher_location = await getGeoLocation(catcherIp);
+    let flight_distance_km = null;
+    
+    if (kite.sender_location && catcher_location) {
+      flight_distance_km = getDistanceKm(kite.sender_location.lat, kite.sender_location.lon, catcher_location.lat, catcher_location.lon);
+    }
+
     // Mark as caught
     const now = new Date().toISOString();
-    await supabase.from('kites').update({ status: 'caught', caught_at: now }).eq('id', kite_db_id);
+    await supabase.from('kites').update({ status: 'caught', caught_at: now, catcher_location, flight_distance_km }).eq('id', kite_db_id);
+
+    // Notify sender their kite was caught
+    if (kite.sender_email && transporter) {
+      await sendCaughtEmail(kite.sender_email, kite.kite_id, kite.beloved_name, catcher_location, flight_distance_km);
+    }
 
     return res.json({
       success: true,
@@ -784,7 +841,7 @@ app.get('/api/ticket/:kite_id', async (req, res) => {
 
     const { data, error } = await supabase
       .from('kites')
-      .select('kite_id, beloved_name, beloved_nickname, status, created_at, caught_at, is_anonymous')
+      .select('kite_id, beloved_name, beloved_nickname, status, created_at, caught_at, is_anonymous, theme_color, reply_message, flight_distance_km, sender_location, catcher_location')
       .eq('kite_id', kite_id.toUpperCase())
       .single();
 
@@ -798,7 +855,11 @@ app.get('/api/ticket/:kite_id', async (req, res) => {
       beloved_nickname: data.beloved_nickname,
       status: data.status,
       sent_at: data.created_at,
-      caught_at: data.caught_at || null
+      caught_at: data.caught_at || null,
+      theme_color: data.theme_color,
+      reply_message: data.reply_message,
+      flight_distance_km: data.flight_distance_km,
+      catcher_location: data.catcher_location
     });
 
   } catch (err) {
@@ -874,6 +935,42 @@ app.get('/api/ticket-download/:kite_id', async (req, res) => {
   }
 });
 
+// POST /api/reply — Send a breeze back (reply)
+app.post('/api/reply', async (req, res) => {
+  try {
+    const { kite_id, reply_message } = req.body;
+    if (!kite_id || !reply_message) return res.status(400).json({ error: 'Missing information.' });
+
+    const { error } = await supabase
+      .from('kites')
+      .update({ reply_message: reply_message.trim() })
+      .eq('kite_id', kite_id.toUpperCase())
+      .eq('status', 'caught');
+
+    if (error) throw error;
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Reply error:', err);
+    return res.status(500).json({ error: 'Failed to send reply.' });
+  }
+});
+
+// GET /api/sky — Get public night sky kites
+app.get('/api/sky', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('kites')
+      .select('message, theme_color, created_at')
+      .eq('is_public', true)
+      .limit(30);
+    if (error) throw error;
+    // Randomize order for a cool aesthetic
+    return res.json(data.sort(() => 0.5 - Math.random()));
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not load the sky.' });
+  }
+});
+
 // POST /api/delete/:kite_id — Delete a caught kite
 app.post('/api/delete/:kite_id', async (req, res) => {
   try {
@@ -937,12 +1034,37 @@ async function sendTicketEmail(email, kite_id, beloved_name) {
   }
 }
 
+async function sendCaughtEmail(email, kite_id, beloved_name, catcher_location, distance_km) {
+  try {
+    let geoText = '';
+    if (catcher_location && catcher_location.city) {
+      geoText = `<p style="color: #798699; font-size: 14px; margin-bottom: 8px;">It was caught in <strong>${catcher_location.city}, ${catcher_location.country}</strong>.</p>`;
+    }
+    if (distance_km) {
+      geoText += `<p style="color: #798699; font-size: 14px; margin-bottom: 24px;">Your kite flew <strong>${distance_km} km</strong> to reach them.</p>`;
+    }
+
+    await transporter.sendMail({
+      from: `KiteMail <${process.env.SMTP_FROM}>`,
+      to: email,
+      subject: `💌 Your kite was caught! — ${kite_id}`,
+      html: `<div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; background: #ffffff; color: #1e2532; padding: 40px; border-radius: 12px; border: 1px solid #e8f0f6;">
+          <h1 style="color: #3b9c52; font-size: 28px; margin-bottom: 16px;">💌 They caught it.</h1>
+          <p style="color: #4a5668; font-size: 15px; margin-bottom: 16px;"><strong>${beloved_name}</strong> successfully answered your security questions and opened your kite.</p>
+          ${geoText}
+          <a href="${process.env.APP_URL}/ticket?id=${kite_id}" style="display: inline-block; padding: 12px 24px; background: #d97d54; color: #fff; text-decoration: none; border-radius: 20px; font-family: sans-serif; font-size: 13px;">View Ticket Status</a>
+        </div>`
+    });
+  } catch (e) { console.error('Caught Email send error:', e); }
+}
+
 // ─── PAGE ROUTES ──────────────────────────────────────────────────────────────
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/fly', (req, res) => res.sendFile(path.join(__dirname, 'public', 'fly.html')));
 app.get('/find', (req, res) => res.sendFile(path.join(__dirname, 'public', 'find.html')));
 app.get('/ticket', (req, res) => res.sendFile(path.join(__dirname, 'public', 'ticket.html')));
+app.get('/sky', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sky.html')));
 app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.html')));
 app.get('/safety', (req, res) => res.sendFile(path.join(__dirname, 'public', 'safety.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
