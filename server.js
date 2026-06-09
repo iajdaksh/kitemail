@@ -167,7 +167,7 @@ async function insertKiteRecord(insertData) {
   return supabase.from('kites').insert([fallbackData]).select('kite_id').single();
 }
 
-// Auto-cleanup for kites caught more than 14 days ago
+// Auto-cleanup for kites caught more than 3 days ago
 let lastCleanup = 0;
 async function cleanupOldKites() {
   const now = Date.now();
@@ -176,13 +176,13 @@ async function cleanupOldKites() {
   lastCleanup = now;
 
   try {
-    const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString();
     
     const { error } = await supabase
       .from('kites')
       .delete()
       .eq('status', 'caught')
-      .lt('caught_at', fourteenDaysAgo);
+      .lt('caught_at', threeDaysAgo);
       
     if (error) console.error('Kite cleanup database error:', error);
   } catch (err) {
@@ -264,7 +264,9 @@ async function getStats() {
 
 // Helper: Generate letter-style HTML for kite
 function generateKiteLetterHTML(kite) {
-  const t = getTheme(kite.theme_color);
+  const bg = kite.bg_color || '#ffffff';
+  const textCol = kite.text_color || '#1e2532';
+  const font = kite.font_family || 'Bodoni Moda';
   return `
     <!DOCTYPE html>
     <html>
@@ -272,11 +274,11 @@ function generateKiteLetterHTML(kite) {
       <meta charset="utf-8">
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;0,6..96,400;1,6..96,300;1,6..96,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;0,6..96,400;0,6..96,500;1,6..96,300;1,6..96,400;1,6..96,500&family=Caveat:wght@400;500&family=Dancing+Script:wght@400;500&family=Pacifico&family=Playfair+Display:ital,wght@0,400;1,400&family=Space+Mono:ital,wght@0,400;1,400&display=swap');
         body { 
           margin: 0; 
           padding: 40px; 
-      background: ${t.bg}; 
+          background: #f2f7fa; 
           font-family: 'Bodoni Moda', Georgia, serif; 
           display: flex; 
           justify-content: center; 
@@ -286,21 +288,14 @@ function generateKiteLetterHTML(kite) {
         .letter {
           width: 612px;
           min-height: 792px;
-      background: #ffffff;
-      color: #1e2532;
+          background: ${bg};
+          color: ${textCol};
           padding: 40px 44px 34px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.08);
           box-sizing: border-box;
           position: relative;
           display: flex;
           flex-direction: column;
-        }
-        .letter::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(135deg, ${t.gradient}, transparent);
-          pointer-events: none;
         }
         .header {
           text-align: center;
@@ -312,24 +307,27 @@ function generateKiteLetterHTML(kite) {
         h1 { 
           font-size: 24px; 
           margin: 6px 0; 
-      color: ${t.primary};
+          color: ${textCol};
           font-weight: 300;
           letter-spacing: 2px;
+          font-family: 'Bodoni Moda', Georgia, serif; 
         }
         .date { 
           font-size: 11px; 
-      color: #798699; 
+          color: ${textCol}; 
+          opacity: 0.7;
           letter-spacing: 1px;
           text-transform: uppercase;
         }
         .message { 
           font-size: 16px; 
           line-height: 2; 
-      color: #1e2532; 
+          color: ${textCol}; 
           margin: 16px 0 0;
           white-space: pre-wrap;
           font-style: italic;
           flex: 1;
+          font-family: '${font}', Georgia, serif; 
         }
         .footer {
           margin-top: 24px;
@@ -340,7 +338,8 @@ function generateKiteLetterHTML(kite) {
           justify-content: space-between;
           gap: 16px;
           font-size: 12px;
-      color: #798699;
+          color: ${textCol};
+          opacity: 0.8;
           letter-spacing: 1px;
         }
         .footer-note {
@@ -348,14 +347,14 @@ function generateKiteLetterHTML(kite) {
         }
         .kite-id {
           font-size: 12px;
-      color: ${t.primary};
+          color: ${textCol};
           font-family: monospace;
           letter-spacing: 2px;
           white-space: nowrap;
         }
         .sender-name {
           font-style: italic;
-          color: #798699;
+          color: ${textCol};
         }
       </style>
     </head>
@@ -582,7 +581,7 @@ app.post('/api/fly', async (req, res) => {
       question_2, answer_2, hint_2,
       question_3, answer_3, hint_3,
       sender_name, sender_nickname, sender_dob,
-      sender_email, is_anonymous, available_after, is_public, theme_color
+      sender_email, is_anonymous, available_after, is_public, theme_color, bg_color, text_color, font_family
     } = req.body;
 
     // Validation
@@ -594,6 +593,9 @@ app.post('/api/fly', async (req, res) => {
     }
     if (!sender_dob) {
       return res.status(400).json({ error: 'Your date of birth is required.' });
+    }
+    if (!sender_email || !sender_email.includes('@')) {
+      return res.status(400).json({ error: 'A valid email is required for tracking and notifications.' });
     }
     if (!is_anonymous && !sender_name && !sender_nickname) {
       return res.status(400).json({ error: 'Please provide your name or nickname.' });
@@ -631,6 +633,9 @@ app.post('/api/fly', async (req, res) => {
       sender_nickname: is_anonymous ? null : (sender_nickname?.trim() || null),
       status: 'flying',
       theme_color: theme_color || 'default',
+      bg_color: bg_color || '#ffffff',
+      text_color: text_color || '#1e2532',
+      font_family: font_family || 'Bodoni Moda',
       is_public: Boolean(is_public),
       available_after: available_after ? new Date(available_after).toISOString() : null,
       sender_location,
