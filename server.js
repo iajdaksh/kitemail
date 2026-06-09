@@ -139,6 +139,29 @@ async function insertKiteRecord(insertData) {
   return supabase.from('kites').insert([fallbackData]).select('kite_id').single();
 }
 
+// Auto-cleanup for kites caught more than 14 days ago
+let lastCleanup = 0;
+async function cleanupOldKites() {
+  const now = Date.now();
+  // Execute at most once per hour to avoid unnecessary database calls
+  if (now - lastCleanup < 60 * 60 * 1000) return;
+  lastCleanup = now;
+
+  try {
+    const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
+    
+    const { error } = await supabase
+      .from('kites')
+      .delete()
+      .eq('status', 'caught')
+      .lt('caught_at', fourteenDaysAgo);
+      
+    if (error) console.error('Kite cleanup database error:', error);
+  } catch (err) {
+    console.error('Kite cleanup execution error:', err);
+  }
+}
+
 // Calculate similarity score (0-1) between two strings
 function calculateSimilarity(str1, str2) {
   try {
@@ -787,6 +810,9 @@ app.get('/api/ticket/:kite_id', async (req, res) => {
 // GET /api/stats — Get kite statistics
 app.get('/api/stats', async (req, res) => {
   try {
+    // Trigger background cleanup asynchronously
+    cleanupOldKites();
+
     const stats = await getStats();
     return res.json(stats);
   } catch (err) {
