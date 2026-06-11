@@ -553,6 +553,24 @@ function generateKiteTicketHTML(kite) {
               <div class="label">Caught On</div>
               <div class="value">${caughtAt || 'Still flying'}</div>
             </div>
+          ${kite.flight_distance_km ? `
+          <div class="row">
+            <div class="label">Flight Distance</div>
+            <div class="value">${kite.flight_distance_km} km</div>
+          </div>
+          ` : ''}
+          ${kite.catcher_location?.city ? `
+          <div class="row">
+            <div class="label">Caught In</div>
+            <div class="value">${kite.catcher_location.city}, ${kite.catcher_location.country}</div>
+          </div>
+          ` : ''}
+          ${kite.reply_message ? `
+          <div class="row full">
+            <div class="label">A Breeze Back</div>
+            <div class="value" style="font-style: italic;">"${kite.reply_message}"</div>
+          </div>
+          ` : ''}
           </div>
           <div class="footer">KiteMail — Messages carried by the wind</div>
         </div>
@@ -659,7 +677,7 @@ app.post('/api/fly', async (req, res) => {
 
     // Send ticket email if email provided
     if (sender_email && transporter) {
-      await sendTicketEmail(sender_email, kite_id, beloved_name);
+      await sendTicketEmail(sender_email, kite_id, beloved_name, insertData.theme_color);
     }
 
     return res.json({ success: true, kite_id });
@@ -843,7 +861,7 @@ app.post('/api/catch', async (req, res) => {
 
     // Notify sender their kite was caught
     if (kite.sender_email && transporter) {
-      await sendCaughtEmail(kite.sender_email, kite.kite_id, kite.beloved_name, catcher_location, flight_distance_km);
+      await sendCaughtEmail(kite.sender_email, kite.kite_id, kite.beloved_name, catcher_location, flight_distance_km, kite.theme_color);
     }
 
     return res.json({
@@ -944,7 +962,7 @@ app.get('/api/ticket-download/:kite_id', async (req, res) => {
 
     const { data: kite, error } = await supabase
       .from('kites')
-      .select('kite_id, beloved_name, beloved_nickname, status, created_at, caught_at')
+      .select('kite_id, beloved_name, beloved_nickname, status, created_at, caught_at, theme_color, reply_message, flight_distance_km, catcher_location')
       .eq('kite_id', kite_id.toUpperCase())
       .single();
 
@@ -967,13 +985,32 @@ app.post('/api/reply', async (req, res) => {
     const { kite_id, reply_message } = req.body;
     if (!kite_id || !reply_message) return res.status(400).json({ error: 'Missing information.' });
 
-    const { error } = await supabase
+    // Fetch kite data to get sender's email for notification
+    const { data: kite, error: fetchError } = await supabase
+      .from('kites')
+      .select('sender_email, beloved_name, kite_id, theme_color')
+      .eq('kite_id', kite_id.toUpperCase())
+      .eq('status', 'caught')
+      .single();
+
+    if (fetchError) {
+      // Log the error but don't block the reply from being saved
+      console.error('Reply fetch error:', fetchError);
+    }
+
+    const { error: updateError } = await supabase
       .from('kites')
       .update({ reply_message: reply_message.trim() })
       .eq('kite_id', kite_id.toUpperCase())
       .eq('status', 'caught');
 
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+    // Send notification email
+    if (kite && kite.sender_email && transporter) {
+      await sendBreezeEmail(kite.sender_email, kite.kite_id, kite.beloved_name, reply_message.trim(), kite.theme_color);
+    }
+
     return res.json({ success: true });
   } catch (err) {
     console.error('Reply error:', err);
@@ -1033,55 +1070,163 @@ app.post('/api/delete/:kite_id', async (req, res) => {
   }
 });
 
+// Helper: Generate themed, responsive email HTML
+function generateEmailHTML({ title, preheader, body, themeColor = 'default' }) {
+  const t = getTheme(themeColor);
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta name="x-apple-disable-message-reformatting">
+      <title>${title}</title>
+      <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+      <![endif]-->
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400&family=Outfit:wght@300;400;500&display=swap');
+        table, td, div, h1, p {font-family: 'Outfit', sans-serif;}
+        body { margin: 0; padding: 0; background-color: ${t.bg}; }
+        .content-wrapper { background-color: #ffffff; padding: 32px; border: 1px solid #e8f0f6; border-radius: 12px; }
+        h1 { color: ${t.primary}; font-family: 'Bodoni Moda', Georgia, serif; font-size: 28px; margin: 0 0 16px; font-weight: 400; }
+        p { color: #4a5668; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+        strong { color: #1e2532; }
+        a.button { display: inline-block; padding: 12px 24px; background-color: ${t.primary}; color: #ffffff !important; text-decoration: none; border-radius: 20px; font-family: 'Outfit', sans-serif; font-size: 13px; }
+        .footer p { color: #798699; font-size: 12px; margin: 0 0 4px; }
+        .footer a { color: #798699; text-decoration: underline; }
+      </style>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: ${t.bg};">
+      <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+        ${preheader}
+      </div>
+      <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;background:${t.bg};">
+        <tr>
+          <td align="center" style="padding:24px 12px;">
+            <table role="presentation" style="width:100%;max-width:560px;border-collapse:collapse;border:0;border-spacing:0;">
+              <tr>
+                <td align="center" style="padding:20px 0;">
+                  <a href="${appUrl}" style="font-family: 'Bodoni Moda', Georgia, serif; font-size: 22px; font-weight: 400; color: #1e2532; text-decoration: none;">
+                    🪁 Kite<span style="color: ${t.primary};">Mail</span>
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td class="content-wrapper" style="background-color: #ffffff; padding: 32px; border: 1px solid #e8f0f6; border-radius: 12px;">
+                  ${body}
+                </td>
+              </tr>
+              <tr>
+                <td align="center" class="footer" style="padding:24px 12px;">
+                  <p>KiteMail — Messages carried by the wind</p>
+                  <p><a href="${appUrl}/about">About</a> &bull; <a href="${appUrl}/safety">Safety</a> &bull; <a href="${appUrl}/ticket">Track Kite</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
 // ─── EMAIL ────────────────────────────────────────────────────────────────────
 
-async function sendTicketEmail(email, kite_id, beloved_name) {
+async function sendTicketEmail(email, kite_id, beloved_name, theme_color = 'default') {
   try {
+    const body = `
+      <h1>🪁 Your kite is in the sky</h1>
+      <p>Flying towards <strong>${beloved_name}</strong></p>
+      <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin-bottom: 32px; text-align: center;">
+        <p style="color: #4a5668; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Kite ID</p>
+        <p style="color: ${getTheme(theme_color).primary}; font-size: 28px; font-family: monospace; letter-spacing: 4px; margin: 0;">${kite_id}</p>
+      </div>
+      <p>Use this ID anytime to check if your kite has been caught. Keep it safe — this is your only proof that your kite is flying.</p>
+      <p style="text-align: center; margin: 32px 0 0;"><a href="${process.env.APP_URL}/ticket?id=${kite_id}" class="button">Track Your Kite</a></p>
+    `;
+
     await transporter.sendMail({
       from: `KiteMail <${process.env.SMTP_FROM}>`,
       to: email,
       subject: `Your kite is flying 🪁 — ${kite_id}`,
-      html: `
-        <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; background: #ffffff; color: #1e2532; padding: 40px; border-radius: 12px; border: 1px solid #e8f0f6;">
-          <h1 style="color: #d97d54; font-size: 28px; margin-bottom: 8px;">🪁 Your kite is in the sky</h1>
-          <p style="color: #798699; font-size: 14px; margin-bottom: 32px;">Flying towards <strong style="color:#1e2532;">${beloved_name}</strong></p>
-          <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
-            <p style="color: #4a5668; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Kite ID</p>
-            <p style="color: #d97d54; font-size: 28px; font-family: monospace; letter-spacing: 4px; margin: 0;">${kite_id}</p>
-          </div>
-          <p style="color: #798699; font-size: 14px; line-height: 1.8;">Use this ID anytime to check if your kite has been caught. Keep it safe — this is your only proof that your kite is flying.</p>
-          <hr style="border: none; border-top: 1px solid #e8f0f6; margin: 32px 0;" />
-          <p style="color: #798699; font-size: 12px;">KiteMail — Messages carried by the wind</p>
-        </div>
-      `
+      html: generateEmailHTML({
+        title: `Your kite is flying 🪁 — ${kite_id}`,
+        preheader: `Your Kite ID is ${kite_id}. Keep it safe to track your message.`,
+        body,
+        themeColor: theme_color
+      })
     });
   } catch (e) {
     console.error('Email send error:', e);
   }
 }
 
-async function sendCaughtEmail(email, kite_id, beloved_name, catcher_location, distance_km) {
+async function sendCaughtEmail(email, kite_id, beloved_name, catcher_location, distance_km, theme_color = 'default') {
   try {
     let geoText = '';
     if (catcher_location && catcher_location.city) {
-      geoText = `<p style="color: #798699; font-size: 14px; margin-bottom: 8px;">It was caught in <strong>${catcher_location.city}, ${catcher_location.country}</strong>.</p>`;
+      geoText = `<p>It was caught in <strong>${catcher_location.city}, ${catcher_location.country}</strong>.</p>`;
     }
     if (distance_km) {
-      geoText += `<p style="color: #798699; font-size: 14px; margin-bottom: 24px;">Your kite flew <strong>${distance_km} km</strong> to reach them.</p>`;
+      geoText += `<p>Your kite flew <strong>${distance_km} km</strong> to reach them.</p>`;
     }
+
+    const body = `
+      <h1>💌 They caught it.</h1>
+      <p><strong>${beloved_name}</strong> successfully answered your security questions and opened your kite.</p>
+      ${geoText}
+      <p style="text-align: center; margin: 24px 0 0;"><a href="${process.env.APP_URL}/ticket?id=${kite_id}" class="button">View Ticket Status</a></p>
+    `;
 
     await transporter.sendMail({
       from: `KiteMail <${process.env.SMTP_FROM}>`,
       to: email,
       subject: `💌 Your kite was caught! — ${kite_id}`,
-      html: `<div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; background: #ffffff; color: #1e2532; padding: 40px; border-radius: 12px; border: 1px solid #e8f0f6;">
-          <h1 style="color: #3b9c52; font-size: 28px; margin-bottom: 16px;">💌 They caught it.</h1>
-          <p style="color: #4a5668; font-size: 15px; margin-bottom: 16px;"><strong>${beloved_name}</strong> successfully answered your security questions and opened your kite.</p>
-          ${geoText}
-          <a href="${process.env.APP_URL}/ticket?id=${kite_id}" style="display: inline-block; padding: 12px 24px; background: #d97d54; color: #fff; text-decoration: none; border-radius: 20px; font-family: sans-serif; font-size: 13px;">View Ticket Status</a>
-        </div>`
+      html: generateEmailHTML({
+        title: `Your kite was caught! — ${kite_id}`,
+        preheader: `${beloved_name} has caught and read your kite message.`,
+        body,
+        themeColor: theme_color
+      })
     });
   } catch (e) { console.error('Caught Email send error:', e); }
+}
+
+async function sendBreezeEmail(email, kite_id, beloved_name, reply_message, theme_color = 'default') {
+  try {
+    const body = `
+      <h1>🌬️ A breeze came back for you.</h1>
+      <p><strong>${beloved_name}</strong> sent a reply to your kite message.</p>
+      <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin: 24px 0; font-style: italic;">
+        "${reply_message}"
+      </div>
+      <p style="text-align: center; margin: 24px 0 0;"><a href="${process.env.APP_URL}/ticket?id=${kite_id}" class="button">View Full Ticket</a></p>
+    `;
+
+    await transporter.sendMail({
+      from: `KiteMail <${process.env.SMTP_FROM}>`,
+      to: email,
+      subject: `🌬️ A breeze came back for kite ${kite_id}`,
+      html: generateEmailHTML({
+        title: `A breeze came back for you`,
+        preheader: `${beloved_name} has replied to your kite message.`,
+        body,
+        themeColor: theme_color
+      })
+    });
+  } catch (e) {
+    console.error('Breeze Email send error:', e);
+  }
 }
 
 // ─── PAGE ROUTES ──────────────────────────────────────────────────────────────
