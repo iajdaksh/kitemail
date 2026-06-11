@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel — KiteMail</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .report-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; transition: all var(--transition); box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+    .report-card:hover { border-color: rgba(217,125,84,0.2); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
+    .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 1px dashed var(--border); padding-bottom: 16px; }
+    .report-title { font-family: var(--font-display); font-size: 24px; color: var(--cream); margin-bottom: 4px; }
+    .report-subtitle { font-size: 13px; color: var(--muted); }
+    .report-status { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 6px 16px; border-radius: 20px; font-weight: 500; }
+    .status-open { background: rgba(217,125,84,0.08); color: var(--gold-dim); border: 1px solid rgba(217,125,84,0.2); }
+    .status-resolved { background: rgba(70,160,90,0.08); color: #3b9c52; border: 1px solid rgba(70,160,90,0.2); }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 24px; }
+    .detail-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+    .detail-value { font-size: 14px; color: var(--cream); font-weight: 400; }
+    .message-box { background: var(--bg); border: 1px solid var(--border); padding: 24px; border-radius: var(--radius-sm); font-style: italic; color: var(--muted-2); font-family: 'Bodoni Moda', serif; font-size: 16px; margin-top: 16px; line-height: 1.8; }
+    .action-bar { display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span> <span style="font-size: 14px; color: var(--muted); margin-left: 8px; font-family: var(--font-body);">Admin</span></a>
+    <button class="btn btn-ghost" style="padding: 8px 16px; font-size: 12px; display: none;" onclick="logout()" id="navLogoutBtn">Logout</button>
+  </nav>
+
+  <div class="page-wrap" style="padding-top: 120px; padding-bottom: 80px;">
+    <div class="container" id="loginView">
+      <div class="card fade-in" style="max-width: 420px; margin: 60px auto; text-align: center;">
+        <div class="section-tag">Restricted Access</div>
+        <h2 class="section-title" style="font-size: 32px; margin-bottom: 8px;">Admin Login</h2>
+        <p style="margin-bottom: 32px; font-size: 14px;">Please enter your secret key to continue.</p>
+        <input type="password" id="adminSecret" class="form-input" placeholder="Admin Secret Key" style="margin-bottom: 20px; text-align: center; letter-spacing: 2px;" />
+        <button class="btn btn-primary btn-full" onclick="login()">Access Dashboard</button>
+      </div>
+    </div>
+
+    <div class="container" id="dashboardView" style="display: none;">
+      <div class="fade-in" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px;">
+        <div>
+          <div class="section-tag">Dashboard</div>
+          <h1 class="section-title">Report <em>Management</em></h1>
+        </div>
+        <button class="btn btn-ghost" onclick="loadReports()">↻ Refresh</button>
+      </div>
+
+      <div id="reportsList"></div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let secret = localStorage.getItem('km_admin_secret');
+    
+    if (secret) showDashboard();
+
+    function login() {
+      secret = document.getElementById('adminSecret').value.trim();
+      if (!secret) return;
+      localStorage.setItem('km_admin_secret', secret);
+      showDashboard();
+    }
+
+    function logout() {
+      localStorage.removeItem('km_admin_secret');
+      document.getElementById('loginView').style.display = 'block';
+      document.getElementById('dashboardView').style.display = 'none';
+      document.getElementById('adminSecret').value = '';
+      document.getElementById('navLogoutBtn').style.display = 'none';
+    }
+
+    async function showDashboard() {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      document.getElementById('navLogoutBtn').style.display = 'inline-flex';
+      loadReports();
+    }
+
+    async function loadReports() {
+      document.getElementById('reportsList').innerHTML = '<div style="text-align: center; padding: 60px; color: var(--muted);"><span class="spinner" style="margin-bottom: 16px;"></span><br>Loading reports...</div>';
+      try {
+        const res = await fetch('/api/admin/reports', { headers: { 'Authorization': secret } });
+        if (res.status === 401) {
+          logout();
+          return alert('Unauthorized. Invalid secret.');
+        }
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Server error loading reports.');
+        
+        const container = document.getElementById('reportsList');
+        container.innerHTML = '';
+
+        if (data.length === 0) {
+          container.innerHTML = '<div class="card" style="text-align: center; padding: 60px; color: var(--muted);">No reports found. The sky is clear. ✨</div>';
+          return;
+        }
+
+        data.forEach(r => {
+          const kite = r.kites || {};
+          const isResolved = r.status === 'resolved';
+
+          container.innerHTML += `
+            <div class="report-card fade-in">
+              <div class="report-header">
+                <div>
+                  <div class="report-title">${r.ticket_id}</div>
+                  <div class="report-subtitle">Reported against Kite: <strong style="color: var(--cream);">${r.kite_id}</strong></div>
+                </div>
+                <div class="report-status ${isResolved ? 'status-resolved' : 'status-open'}">
+                  ${r.status}
+                </div>
+              </div>
+              
+              <div class="detail-grid">
+                <div><div class="detail-label">Reporter Email</div><div class="detail-value">${r.reporter_email}</div></div>
+                <div><div class="detail-label">Reported On</div><div class="detail-value">${new Date(r.created_at).toLocaleString()}</div></div>
+                <div style="grid-column: 1 / -1;"><div class="detail-label">Reason for Report</div><div class="detail-value">${r.reason}</div></div>
+              </div>
+
+              ${kite ? `
+                <div style="margin-top: 32px;">
+                  <div class="detail-label" style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">Associated Kite Details</div>
+                  <div class="detail-grid" style="margin-bottom: 16px;">
+                    <div><div class="detail-label">Sender IP</div><div class="detail-value">${kite.sender_ip || 'N/A'}</div></div>
+                    <div><div class="detail-label">Sender Email</div><div class="detail-value">${kite.sender_email || 'N/A'}</div></div>
+                    <div><div class="detail-label">Kite Status</div><div class="detail-value" style="text-transform: capitalize;">${kite.status || 'N/A'}</div></div>
+                  </div>
+                  <div class="detail-label">Reported Message Content</div>
+                  <div class="message-box">"${kite.message}"</div>
+                </div>
+              ` : '<div class="message-box" style="color: var(--muted); text-align: center;">Kite data no longer available or was deleted.</div>'}
+
+              ${!isResolved ? `
+                <div class="action-bar">
+                  <input type="text" id="res_${r.id}" class="form-input" placeholder="Resolution notes..." style="flex: 1;" />
+                  <button class="btn btn-primary" onclick="resolveReport('${r.id}', '${r.reporter_email}', '${r.ticket_id}', '${r.kite_id}')">Resolve & Reply</button>
+                  ${kite && kite.sender_ip ? `
+                    <button class="btn btn-danger" onclick="blockIp('${kite.sender_ip}')">Block IP</button>
+                  ` : ''}
+                </div>
+              ` : `
+                <div class="message-box" style="background: rgba(70,160,90,0.05); margin-top: 24px; border-color: rgba(70,160,90,0.2);">
+                  <strong style="color: #3b9c52; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 8px;">Resolution Sent</strong>
+                  ${r.resolution_notes}
+                </div>
+              `}
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('reportsList').innerHTML = '<div class="alert alert-error show">Error loading reports.</div>';
+      }
+    }
+
+    async function resolveReport(id, email, ticket, kiteId) {
+      const notes = document.getElementById(`res_${id}`).value.trim();
+      if (!notes) return alert('Please enter resolution notes to send to the reporter.');
+      
+      try {
+        const res = await fetch('/api/admin/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': secret }, body: JSON.stringify({ report_id: id, resolution_notes: notes, reporter_email: email, ticket_id: ticket, kite_id: kiteId }) });
+        if (res.ok) { alert('Report resolved and email sent.'); loadReports(); } else alert('Failed to resolve report.');
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function blockIp(ip) {
+      const reason = prompt('Reason for blocking this IP:');
+      if (reason === null) return;
+      try {
+        const res = await fetch('/api/admin/block', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': secret }, body: JSON.stringify({ ip_address: ip, reason }) });
+        if (res.ok) alert('IP Blocked Successfully.'); else alert('Failed to block IP.');
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+  </script>
+</body>
+</html>

@@ -131,7 +131,12 @@ function getRequestTracking(req, res) {
   };
 }
 
-function isBlockedSender(tracking) {
+async function isBlockedSender(tracking) {
+  try {
+    const { data } = await supabase.from('blocked_ips').select('ip_address').eq('ip_address', tracking.sender_ip).single();
+    if (data) return true;
+  } catch (e) {}
+
   const blockedIps = (process.env.BLOCKED_IPS || '')
     .split(',')
     .map(value => value.trim())
@@ -383,6 +388,9 @@ function generateKiteLetterHTML(kite) {
           <div class="sender-name">${kite.is_anonymous ? 'Anonymous' : (kite.sender_name || kite.sender_nickname)}</div>
         </div>
       </div>
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${process.env.APP_URL || 'http://localhost:3000'}/report?kite_id=${kite.kite_id}" style="color: #798699; font-size: 12px; font-family: sans-serif; text-decoration: underline;">Report this kite</a>
+      </div>
       <script>
         window.addEventListener('load', () => {
           const element = document.querySelector('.letter');
@@ -575,6 +583,9 @@ function generateKiteTicketHTML(kite) {
           <div class="footer">KiteMail — Messages carried by the wind</div>
         </div>
       </div>
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${process.env.APP_URL || 'http://localhost:3000'}/report?kite_id=${kite.kite_id}" style="color: #798699; font-size: 12px; font-family: 'Outfit', sans-serif; text-decoration: underline;">Report this ticket</a>
+      </div>
       <script>
         window.addEventListener('load', () => {
           setTimeout(() => {
@@ -636,7 +647,7 @@ app.post('/api/fly', async (req, res) => {
     }
 
     const tracking = getRequestTracking(req, res);
-    if (isBlockedSender(tracking)) {
+    if (await isBlockedSender(tracking)) {
       return res.status(403).json({ error: 'This device is blocked from sending new kites.' });
     }
 
@@ -1070,6 +1081,110 @@ app.post('/api/delete/:kite_id', async (req, res) => {
   }
 });
 
+// POST /api/report — Submit a report
+app.post('/api/report', async (req, res) => {
+  try {
+    const { kite_id, reporter_email, reason } = req.body;
+    if (!kite_id || !reporter_email || !reason) return res.status(400).json({ error: 'Missing required fields.' });
+
+    const ticket_id = 'REP-' + nanoid(8).toUpperCase();
+    const { error } = await supabase.from('reports').insert([{
+      ticket_id,
+      kite_id: kite_id.toUpperCase(),
+      reporter_email,
+      reason
+    }]);
+
+    if (error) throw error;
+
+    if (transporter) {
+      await sendReportEmail(reporter_email, ticket_id, kite_id.toUpperCase());
+    }
+
+    return res.json({ success: true, ticket_id });
+  } catch (err) {
+    console.error('Report error:', err);
+    return res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// GET /api/admin/reports — Admin fetch reports
+app.get('/api/admin/reports', async (req, res) => {
+  try {
+    const auth = req.headers['authorization'];
+    if (auth !== (process.env.ADMIN_SECRET || 'kitemail-admin')) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Fetch reports
+    const { data: reports, error } = await supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    // Manually join kites to avoid Foreign Key relation errors
+    if (reports && reports.length > 0) {
+      const kiteIds = reports.map(r => r.kite_id);
+      const { data: kites } = await supabase
+        .from('kites')
+        .select('kite_id, sender_ip, message, sender_email, status')
+        .in('kite_id', kiteIds);
+        
+      const kiteMap = {};
+      if (kites) kites.forEach(k => kiteMap[k.kite_id] = k);
+      reports.forEach(r => { r.kites = kiteMap[r.kite_id] || null; });
+    }
+
+    return res.json(reports || []);
+  } catch (err) {
+    console.error('Reports loading error:', err);
+    return res.status(500).json({ error: 'Failed to load reports' });
+  }
+});
+
+// POST /api/admin/block — Admin block IP
+app.post('/api/admin/block', async (req, res) => {
+  try {
+    const auth = req.headers['authorization'];
+    if (auth !== (process.env.ADMIN_SECRET || 'kitemail-admin')) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { ip_address, reason } = req.body;
+    if (!ip_address) return res.status(400).json({ error: 'IP missing' });
+
+    const { error } = await supabase.from('blocked_ips').insert([{ ip_address, reason }]);
+    if (error) throw error;
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to block IP' });
+  }
+});
+
+// POST /api/admin/resolve — Admin resolve report
+app.post('/api/admin/resolve', async (req, res) => {
+  try {
+    const auth = req.headers['authorization'];
+    if (auth !== (process.env.ADMIN_SECRET || 'kitemail-admin')) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { report_id, resolution_notes, reporter_email, ticket_id, kite_id } = req.body;
+    
+    const { error } = await supabase
+      .from('reports')
+      .update({ status: 'resolved', resolution_notes })
+      .eq('id', report_id);
+
+    if (error) throw error;
+
+    if (transporter && reporter_email) {
+      await sendResolutionEmail(reporter_email, ticket_id, kite_id, resolution_notes);
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to resolve report' });
+  }
+});
+
 // Helper: Generate themed, responsive email HTML
 function generateEmailHTML({ title, preheader, body, themeColor = 'default' }) {
   const t = getTheme(themeColor);
@@ -1229,6 +1344,57 @@ async function sendBreezeEmail(email, kite_id, beloved_name, reply_message, them
   }
 }
 
+async function sendReportEmail(email, ticket_id, kite_id) {
+  try {
+    const body = `
+      <h1>🚨 Report Received</h1>
+      <p>We have received your report regarding Kite <strong>${kite_id}</strong>.</p>
+      <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin-bottom: 32px; text-align: center;">
+        <p style="color: #4a5668; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Report Ticket ID</p>
+        <p style="color: ${getTheme('default').primary}; font-size: 28px; font-family: monospace; letter-spacing: 4px; margin: 0;">${ticket_id}</p>
+      </div>
+      <p>Our admin team will review this shortly.</p>
+    `;
+
+    await transporter.sendMail({
+      from: `"Admin (Kite Mail)" <kitemailspace@gmail.com>`,
+      to: email,
+      subject: `Report Received — ${ticket_id}`,
+      html: generateEmailHTML({
+        title: `Report Received`,
+        preheader: `Your report ticket ID is ${ticket_id}.`,
+        body,
+        themeColor: 'default'
+      })
+    });
+  } catch (e) { console.error('Report Email send error:', e); }
+}
+
+async function sendResolutionEmail(email, ticket_id, kite_id, resolution_notes) {
+  try {
+    const body = `
+      <h1>✅ Report Resolved</h1>
+      <p>Your report <strong>${ticket_id}</strong> regarding Kite <strong>${kite_id}</strong> has been resolved by our admin team.</p>
+      <div style="background: #f2f7fa; border: 1px solid #e8f0f6; border-radius: 8px; padding: 24px; margin: 24px 0; font-style: italic;">
+        "<strong>Admin Note:</strong> ${resolution_notes}"
+      </div>
+      <p>Thank you for helping keep the sky safe.</p>
+    `;
+
+    await transporter.sendMail({
+      from: `"Admin (Kite Mail)" <kitemailspace@gmail.com>`,
+      to: email,
+      subject: `Report Resolved — ${ticket_id}`,
+      html: generateEmailHTML({
+        title: `Report Resolved`,
+        preheader: `Update on your report for kite ${kite_id}.`,
+        body,
+        themeColor: 'default'
+      })
+    });
+  } catch (e) { console.error('Resolution Email send error:', e); }
+}
+
 // ─── PAGE ROUTES ──────────────────────────────────────────────────────────────
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -1240,6 +1406,8 @@ app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public', 'abo
 app.get('/safety', (req, res) => res.sendFile(path.join(__dirname, 'public', 'safety.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/report', (req, res) => res.sendFile(path.join(__dirname, 'public', 'report.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // 404
 app.use((req, res) => {

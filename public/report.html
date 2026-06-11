@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Report a Kite — KiteMail</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="container-sm" style="padding-top: 100px; padding-bottom: 100px;">
+      <h1 class="section-title" style="margin-bottom: 24px;">Report a Kite</h1>
+      <p style="margin-bottom: 32px;">If you found a kite containing abusive, illegal, or harmful content, please report it here.</p>
+      
+      <div class="card" id="reportForm">
+        <div id="reportAlert" class="alert"></div>
+        <div class="form-group">
+          <label class="form-label">Kite ID <span class="required">*</span></label>
+          <input type="text" id="kiteId" class="form-input" placeholder="e.g. KT-XXXXXX" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Email <span class="required">*</span></label>
+          <input type="email" id="reporterEmail" class="form-input" placeholder="For updates on your report" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason for Report <span class="required">*</span></label>
+          <textarea id="reason" class="form-textarea" placeholder="Please provide details..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" id="submitBtn" onclick="submitReport()">Submit Report</button>
+      </div>
+
+      <div id="successPanel" class="card" style="display: none; text-align: center;">
+        <h2 style="margin-bottom: 16px;">Report Submitted</h2>
+        <p>Your report ticket ID is <strong id="ticketId" style="color: var(--gold);"></strong>.</p>
+        <p>We have sent a confirmation to your email. Our admin team will review it shortly.</p>
+        <a href="/" class="btn btn-outline" style="margin-top: 24px;">Back Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('kite_id')) {
+      document.getElementById('kiteId').value = urlParams.get('kite_id');
+    }
+
+    async function submitReport() {
+      const kite_id = document.getElementById('kiteId').value.trim();
+      const reporter_email = document.getElementById('reporterEmail').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const btn = document.getElementById('submitBtn');
+
+      if (!kite_id || !reporter_email || !reason) return showAlert('reportAlert', 'All fields are required.', 'error');
+
+      btn.disabled = true; btn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kite_id, reporter_email, reason }) });
+        const data = await res.json();
+        
+        if (!res.ok || data.error) throw new Error(data.error || 'Failed to submit report');
+
+        document.getElementById('reportForm').style.display = 'none';
+        document.getElementById('successPanel').style.display = 'block';
+        document.getElementById('ticketId').textContent = data.ticket_id;
+      } catch (err) {
+        showAlert('reportAlert', err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Submit Report';
+      }
+    }
+  </script>
+</body>
+</html>

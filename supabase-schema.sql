@@ -151,3 +151,21 @@ ALTER TABLE kites ADD COLUMN IF NOT EXISTS flight_distance_km INT;
 ALTER TABLE kites ADD COLUMN IF NOT EXISTS bg_color VARCHAR(20) DEFAULT '#ffffff';
 ALTER TABLE kites ADD COLUMN IF NOT EXISTS text_color VARCHAR(20) DEFAULT '#1e2532';
 ALTER TABLE kites ADD COLUMN IF NOT EXISTS font_family VARCHAR(50) DEFAULT 'Bodoni Moda';
+
+-- Reports & Moderation
+CREATE TABLE IF NOT EXISTS reports (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  ticket_id VARCHAR(12) UNIQUE NOT NULL,
+  kite_id VARCHAR(12) NOT NULL,
+  reporter_email VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'open',
+  resolution_notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS blocked_ips (
+  ip_address VARCHAR(64) PRIMARY KEY,
+  reason TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
