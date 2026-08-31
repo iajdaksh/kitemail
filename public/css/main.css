@@ -663,8 +663,7 @@ body * { animation: none !important; }
 }
 :root[data-theme='dark'] .nav { background: color-mix(in srgb, var(--bg-card) 68%, transparent); }
 html { background: var(--bg); }
-body::after {
-  content: '';
+.nav-safe-mask {
   position: fixed;
   z-index: 99;
   inset: 0 0 auto;
@@ -771,7 +770,7 @@ body::after {
 .nav-links.open ~ .nav-actions { display: flex; }
 
 @media (max-width: 768px) {
-  body::after { height: calc(10px + env(safe-area-inset-top)); }
+  .nav-safe-mask { height: calc(10px + env(safe-area-inset-top)); }
   .nav {
     --nav-top-gap: calc(10px + env(safe-area-inset-top));
     --nav-side-gap: 12px;

@@ -35,6 +35,17 @@ function initNav() {
   });
 }
 
+function addNavSafeMask() {
+  if (document.querySelector('.nav-safe-mask')) return;
+  const nav = document.querySelector('.nav');
+  if (!nav || !nav.parentNode) return;
+
+  const mask = document.createElement('div');
+  mask.className = 'nav-safe-mask';
+  mask.setAttribute('aria-hidden', 'true');
+  nav.parentNode.insertBefore(mask, nav);
+}
+
 // ── ALERT ─────────────────────────────────────────────────────────────────────
 function showAlert(id, message, type = 'error') {
   const el = document.getElementById(id);
@@ -133,6 +144,7 @@ function addThemeToggles() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  addNavSafeMask();
   addThemeToggles();
   initializeTheme();
   initNav();
