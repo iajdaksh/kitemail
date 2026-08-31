@@ -592,8 +592,8 @@ a:hover { opacity: 0.75; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
 
   .card { padding: 20px; }
-  .container { padding: 0 16px; }
-  .container-sm { padding: 0 16px; }
+  .container { padding: 0 24px; }
+  .container-sm { padding: 0 24px; }
 }
 
 @media (max-width: 480px) {
@@ -814,6 +814,7 @@ html { background: var(--bg); }
   .theme-toggle { width: 58px; }
   :root[data-theme='dark'] .theme-toggle::before { transform: translateX(24px); }
   .nav-hamburger { min-width: 64px; }
+  .container, .container-sm { padding-inline: 20px; }
 }
 
 .card, .nav-links.open, .report-card, .kite-result, .ticket-card, .safety-card, .how-card, .feature-card, .sky-card {
