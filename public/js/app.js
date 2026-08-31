@@ -1,55 +1,35 @@
 // ── STARS BACKGROUND ──────────────────────────────────────────────────────────
-function createStars(count = 80) {
-  const container = document.querySelector('.stars-bg');
-  if (!container) return;
-  container.innerHTML = '';
-  const items = ['🪁', '☁️', '🕊️', '☁️', '🪁'];
-  for (let i = 0; i < 15; i++) {
-    const star = document.createElement('div');
-    star.className = 'bg-floating-el';
-    star.textContent = items[Math.floor(Math.random() * items.length)];
-    const size = Math.random() * 20 + 16;
-    star.style.cssText = `
-      left: ${Math.random() * 100}%;
-      font-size: ${size}px;
-      --duration: ${Math.random() * 25 + 15}s;
-      --delay: -${Math.random() * 20}s;
-      --max-opacity: ${Math.random() * 0.25 + 0.15};
-    `;
-    container.appendChild(star);
-  }
-}
-
 // ── NAV HAMBURGER ─────────────────────────────────────────────────────────────
 function initNav() {
   const hamburger = document.querySelector('.nav-hamburger');
   const links = document.querySelector('.nav-links');
-  if (!hamburger || !links) return;
+  const nav = document.querySelector('.nav');
+  if (!hamburger || !links || !nav) return;
 
-  // Add close button inside nav-links
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'nav-close';
-  closeBtn.innerHTML = '✕';
-  links.prepend(closeBtn);
-
-  // Add backdrop
-  const backdrop = document.createElement('div');
-  backdrop.className = 'nav-backdrop';
-  document.body.appendChild(backdrop);
+  hamburger.setAttribute('aria-expanded', 'false');
+  hamburger.setAttribute('aria-controls', 'nav-menu');
+  links.id = 'nav-menu';
 
   const openMenu = () => {
     links.classList.add('open');
-    backdrop.classList.add('open');
+    hamburger.setAttribute('aria-expanded', 'true');
   };
 
   const closeMenu = () => {
     links.classList.remove('open');
-    backdrop.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
   };
 
-  hamburger.addEventListener('click', openMenu);
-  closeBtn.addEventListener('click', closeMenu);
-  backdrop.addEventListener('click', closeMenu);
+  hamburger.addEventListener('click', () => {
+    if (links.classList.contains('open')) closeMenu();
+    else openMenu();
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!nav.contains(event.target)) closeMenu();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenu();
+  });
   links.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', closeMenu);
   });
@@ -98,14 +78,63 @@ function formatDate(isoStr) {
 function copyText(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     const orig = btn.textContent;
-    btn.textContent = 'Copied ✓';
+    btn.textContent = 'Copied';
     setTimeout(() => { btn.textContent = orig; }, 2000);
   });
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+function iconMarkup(name, className = '') {
+  return `<svg class="icon ${className}" aria-hidden="true"><use href="/assets/icons.svg#${name}"></use></svg>`;
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('kitemail-theme', theme);
+  document.querySelectorAll('.theme-toggle').forEach((toggle) => {
+    const isDark = theme === 'dark';
+    toggle.setAttribute('aria-pressed', String(isDark));
+    toggle.setAttribute('aria-label', `Switch to ${isDark ? 'light' : 'dark'} mode`);
+  });
+  if (typeof window.updateLetterDefaultPalette === 'function') {
+    window.updateLetterDefaultPalette();
+  }
+}
+
+function initializeTheme() {
+  const savedTheme = localStorage.getItem('kitemail-theme');
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  setTheme(savedTheme || systemTheme);
+  document.querySelectorAll('.theme-toggle').forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+      setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  });
+}
+
+function addThemeToggles() {
+  document.querySelectorAll('.nav').forEach((nav) => {
+    if (nav.querySelector('.theme-toggle')) return;
+    const toggle = document.createElement('button');
+    toggle.className = 'theme-toggle';
+    toggle.type = 'button';
+    toggle.innerHTML = `${iconMarkup('sparkles', 'theme-icon-sun')}${iconMarkup('moon', 'theme-icon-moon')}`;
+    const hamburger = nav.querySelector('.nav-hamburger');
+    if (hamburger) {
+      hamburger.innerHTML = `Menu ${iconMarkup('chevron-down', 'menu-chevron')}`;
+      hamburger.setAttribute('aria-label', 'Open menu');
+    }
+    const actions = document.createElement('div');
+    actions.className = 'nav-actions';
+    actions.appendChild(toggle);
+    if (hamburger) actions.appendChild(hamburger);
+    nav.appendChild(actions);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  createStars();
+  addThemeToggles();
+  initializeTheme();
   initNav();
   initAnonToggle();
   // Auto-init dob inputs

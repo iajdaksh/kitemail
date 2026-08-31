@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin Panel — KiteMail</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .report-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; transition: all var(--transition); box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
@@ -17,7 +17,7 @@
     .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 24px; }
     .detail-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
     .detail-value { font-size: 14px; color: var(--cream); font-weight: 400; }
-    .message-box { background: var(--bg); border: 1px solid var(--border); padding: 24px; border-radius: var(--radius-sm); font-style: italic; color: var(--muted-2); font-family: 'Bodoni Moda', serif; font-size: 16px; margin-top: 16px; line-height: 1.8; }
+    .message-box { background: var(--bg); border: 1px solid var(--border); padding: 24px; border-radius: var(--radius-sm); font-style: italic; color: var(--muted-2); font-family: 'Cormorant Garamond', serif; font-size: 16px; margin-top: 16px; line-height: 1.8; }
     .action-bar { display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); flex-wrap: wrap; }
   </style>
 </head>
@@ -27,7 +27,7 @@
   <div class="ambient ambient-2"></div>
 
   <nav class="nav">
-    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span> <span style="font-size: 14px; color: var(--muted); margin-left: 8px; font-family: var(--font-body);">Admin</span></a>
+    <a href="/" class="nav-logo"><svg class="icon kite-icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span> <span style="font-size: 14px; color: var(--muted); margin-left: 8px; font-family: var(--font-body);">Admin</span></a>
     <button class="btn btn-ghost" style="padding: 8px 16px; font-size: 12px; display: none;" onclick="logout()" id="navLogoutBtn">Logout</button>
   </nav>
 
@@ -99,7 +99,7 @@
         container.innerHTML = '';
 
         if (data.length === 0) {
-          container.innerHTML = '<div class="card" style="text-align: center; padding: 60px; color: var(--muted);">No reports found. The sky is clear. ✨</div>';
+          container.innerHTML = `<div class="card" style="text-align: center; padding: 60px; color: var(--muted);">No reports found. The sky is clear. ${iconMarkup('sparkles')}</div>`;
           return;
         }
 

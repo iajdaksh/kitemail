@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Safety Guidelines — KiteMail</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .safety-warning {
@@ -25,7 +25,7 @@
       margin-bottom: 16px;
     }
     .safety-card .icon { font-size: 32px; margin-bottom: 12px; }
-    .safety-card h3 { font-family: 'Bodoni Moda', serif; font-size: 22px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
+    .safety-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
     .safety-card p { font-size: 13px; color: var(--muted-2); line-height: 1.7; }
 
     .do-dont {
@@ -51,8 +51,8 @@
     .do-box ul, .dont-box ul { list-style: none; padding: 0; }
     .do-box ul li, .dont-box ul li { font-size: 13px; color: var(--muted-2); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); line-height: 1.5; }
     .do-box ul li:last-child, .dont-box ul li:last-child { border: none; }
-    .do-box ul li::before { content: '✓ '; color: #70c880; }
-    .dont-box ul li::before { content: '✕ '; color: #e87070; }
+    .do-box ul li::before { content: ''; }
+    .dont-box ul li::before { content: ''; color: #e87070; }
 
     @media (max-width: 600px) {
       .do-dont { grid-template-columns: 1fr; }
@@ -64,7 +64,7 @@
   <div class="ambient ambient-1"></div>
 
   <nav class="nav">
-    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <a href="/" class="nav-logo"><svg class="icon kite-icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></a>
     <ul class="nav-links">
       <li><a href="/fly">Fly</a></li>
       <li><a href="/find">Find</a></li>
@@ -72,7 +72,7 @@
       <li><a href="/report">Report</a></li>
       <li><a href="/sky">The Night Sky</a></li>
     </ul>
-    <button class="nav-hamburger">☰</button>
+    <button class="nav-hamburger" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#menu"></use></svg></button>
   </nav>
 
   <div class="page-wrap">
@@ -87,7 +87,7 @@
     <div class="container-sm" style="padding-bottom: 80px;">
 
       <div class="safety-warning fade-in fade-in-2">
-        <h4>⚠️ Important</h4>
+        <h4><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#alert"></use></svg> Important</h4>
         <p>KiteMail is designed for genuine personal messages between people who share a real connection. It is not a tool for harassment, unwanted contact, or any form of harm. Misuse will result in permanent removal.</p>
       </div>
 
@@ -104,7 +104,7 @@
 
       <div class="do-dont fade-in fade-in-3">
         <div class="do-box">
-          <h4>✦ Do</h4>
+          <h4>Do</h4>
           <ul>
             <li>Write from a place of genuine feeling</li>
             <li>Use questions only your beloved can answer</li>
@@ -114,7 +114,7 @@
           </ul>
         </div>
         <div class="dont-box">
-          <h4>✕ Don't</h4>
+          <h4>Don't</h4>
           <ul>
             <li>Send threatening or harmful content</li>
             <li>Use easy questions anyone could guess</li>
@@ -126,25 +126,25 @@
       </div>
 
       <div class="safety-card fade-in fade-in-3">
-        <div class="icon">🎭</div>
+        <div class="icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#anonymous"></use></svg></div>
         <h3>On anonymity</h3>
         <p>The anonymous option exists for shy hearts, not cowardly ones. It's for the person who can't bring themselves to say "it's me" — but wants their beloved to feel something real. Please don't use anonymity to say things you wouldn't say with your name attached.</p>
       </div>
 
       <div class="safety-card fade-in fade-in-4">
-        <div class="icon">💔</div>
+        <div class="icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#broken-heart"></use></svg></div>
         <h3>Unsolicited contact</h3>
         <p>If someone has clearly expressed they do not want contact from you, please respect that. A kite can be a beautiful thing — but sending one to someone who has explicitly asked you not to reach out is a form of harassment, not romance. KiteMail supports reporting of such misuse.</p>
       </div>
 
       <div class="safety-card fade-in fade-in-4">
-        <div class="icon">🛡️</div>
+        <div class="icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#shield"></use></svg></div>
         <h3>Content we prohibit</h3>
         <p>Any message containing threats, hate speech, sexual content directed at minors, explicit non-consensual material, or content designed to harm will be removed. We reserve the right to remove any content and block any sender found in violation of these guidelines.</p>
       </div>
 
       <div class="safety-card">
-        <div class="icon">📧</div>
+        <div class="icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#mail"></use></svg></div>
         <h3>Report misuse</h3>
         <p>If a kite drifted your way and made you feel unsafe, threatened, or harassed — please contact us. We take reports seriously and will act swiftly. You can reach us at <a href="mailto:kitemailspace@gmail.com">kitemailspace@gmail.com</a>.</p>
       </div>
@@ -155,7 +155,7 @@
       <div class="container">
         <div class="footer-grid">
           <div class="footer-brand">
-            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <div class="logo"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></div>
             <p>A message carried by the wind — meant only for someone who knows to look up.</p>
           </div>
           <div class="footer-col">
@@ -202,7 +202,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#heart"></use></svg></span> for hearts that feel too much.</p>
           <p>No accounts. No ads. Just love.</p>
         </div>
       </div>

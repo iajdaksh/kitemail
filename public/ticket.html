@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Track Your Kite — KiteMail</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .ticket-hero { padding: 130px 0 40px; text-align: center; }
-    .ticket-hero h1 { font-family: 'Bodoni Moda', serif; font-size: clamp(36px, 6vw, 60px); font-weight: 300; color: var(--cream); }
+    .ticket-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 60px); font-weight: 300; color: var(--cream); }
     .ticket-hero h1 em { color: var(--gold); font-style: italic; }
 
     .ticket-result {
@@ -116,7 +116,7 @@
   <div class="ambient ambient-1"></div>
 
   <nav class="nav">
-    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <a href="/" class="nav-logo"><svg class="icon kite-icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></a>
     <ul class="nav-links">
       <li><a href="/fly">Fly</a></li>
       <li><a href="/find">Find</a></li>
@@ -124,7 +124,7 @@
       <li><a href="/report">Report</a></li>
       <li><a href="/sky">The Night Sky</a></li>
     </ul>
-    <button class="nav-hamburger">☰</button>
+    <button class="nav-hamburger" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#menu"></use></svg></button>
   </nav>
 
   <div class="page-wrap">
@@ -147,14 +147,14 @@
           <p class="form-hint">Your Kite ID was shown after sending and optionally emailed to you.</p>
         </div>
         <button class="btn btn-primary btn-full" onclick="trackKite()">
-          🎫 Check Status
+          <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#ticket"></use></svg> Check Status
         </button>
       </div>
 
       <div id="ticketResult" class="ticket-result">
         <div class="ticket-card">
           <div class="ticket-top" id="ticketTop">
-            <div class="ticket-kite flying" id="ticketKiteIcon">🪁</div>
+            <div class="ticket-kite flying" id="ticketKiteIcon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg></div>
             <div id="ticketStatusBadge"></div>
             <p id="ticketStatusText" style="font-size:13px; color: var(--muted-2); margin-top: 10px;"></p>
           </div>
@@ -185,9 +185,9 @@
         </div>
 
         <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
-          <a href="#" class="btn btn-ghost" id="downloadTicketBtn" target="_blank" style="display: none;">⬇ Download Ticket</a>
-          <a href="/fly" class="btn btn-ghost">🪁 Fly Another</a>
-          <a href="/" class="btn btn-ghost">← Home</a>
+          <a href="#" class="btn btn-ghost" id="downloadTicketBtn" target="_blank" style="display: none;"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#download"></use></svg> Download Ticket</a>
+          <a href="/fly" class="btn btn-ghost"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Fly Another</a>
+          <a href="/" class="btn btn-ghost"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#arrow-left"></use></svg> Home</a>
         </div>
       </div>
     </div>
@@ -196,7 +196,7 @@
       <div class="container">
         <div class="footer-grid">
           <div class="footer-brand">
-            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <div class="logo"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></div>
             <p>A message carried by the wind — meant only for someone who knows to look up.</p>
           </div>
           <div class="footer-col">
@@ -243,7 +243,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#heart"></use></svg></span> for hearts that feel too much.</p>
           <p>No accounts. No ads. Just love.</p>
         </div>
       </div>
@@ -317,8 +317,8 @@
         const replyContainer = document.getElementById('replyContainer');
 
         if (isCaught) {
-          badge.innerHTML = '<span class="badge badge-caught">✓ Kite Caught</span>';
-          kiteIcon.textContent = '💌';
+          badge.innerHTML = `<span class="badge badge-caught">${iconMarkup('check')} Kite Caught</span>`;
+          kiteIcon.innerHTML = iconMarkup('mail');
           kiteIcon.classList.remove('flying');
           kiteIcon.classList.add('caught');
           statusText.textContent = 'Your kite has been opened.';
@@ -334,8 +334,8 @@
             replyContainer.innerHTML = '';
           }
         } else {
-          badge.innerHTML = '<span class="badge badge-flying">🪁 Still Flying</span>';
-          kiteIcon.textContent = '🪁';
+          badge.innerHTML = `<span class="badge badge-flying">${iconMarkup('kite')} Still Flying</span>`;
+          kiteIcon.innerHTML = iconMarkup('kite');
           kiteIcon.classList.add('flying');
           statusText.textContent = 'Your kite is still in the sky, waiting to be caught.';
           distanceRow.style.display = 'none';
@@ -348,14 +348,14 @@
 
         document.getElementById('ticketTimeline').innerHTML = `
           <div class="timeline-item">
-            <div class="timeline-dot done">✓</div>
+            <div class="timeline-dot done">${iconMarkup('check')}</div>
             <div class="timeline-content">
               <h5>Kite Released</h5>
               <p>${sentDate}</p>
             </div>
           </div>
           <div class="timeline-item">
-            <div class="timeline-dot ${isCaught ? 'done' : 'pending'}">${isCaught ? '✓' : '⋯'}</div>
+            <div class="timeline-dot ${isCaught ? 'done' : 'pending'}">${isCaught ? iconMarkup('check') : iconMarkup('more')}</div>
             <div class="timeline-content">
               <h5>${isCaught ? 'Kite Caught' : 'Waiting to be Caught'}</h5>
               <p>${isCaught ? caughtDate : 'Still flying in the sky...'}</p>
@@ -373,7 +373,7 @@
       } catch (err) {
         showAlert('ticketAlert', err.message, 'error');
       } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '🎫 Check Status'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = `${iconMarkup('ticket')} Check Status`; }
       }
     }
   </script>

@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Find Your Kite — KiteMail</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .find-hero { padding: 130px 0 40px; text-align: center; }
-    .find-hero h1 { font-family: 'Bodoni Moda', serif; font-size: clamp(36px, 6vw, 64px); font-weight: 300; color: var(--cream); }
+    .find-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 64px); font-weight: 300; color: var(--cream); }
     .find-hero h1 em { font-style: italic; color: var(--gold); }
 
     .search-card { margin-bottom: 24px; }
@@ -44,7 +44,7 @@
     .q-item { margin-bottom: 20px; }
     .q-text { font-size: 14px; color: var(--cream); margin-bottom: 6px; font-weight: 400; }
     .q-hint { font-size: 11px; color: var(--gold-dim); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .q-hint::before { content: '✦'; }
+    .q-hint::before { content: ''; }
 
     /* Message reveal */
     .message-reveal {
@@ -57,9 +57,9 @@
     }
     .message-reveal.show { display: block; }
     .message-reveal-icon { font-size: 48px; margin-bottom: 16px; animation: kiteFloat 3s ease-in-out infinite; display: inline-block; }
-    .message-caught-text { font-family: 'Bodoni Moda', serif; font-size: 14px; color: var(--muted); font-style: italic; margin-bottom: 24px; }
+    .message-caught-text { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--muted); font-style: italic; margin-bottom: 24px; }
     .message-body {
-      font-family: 'Bodoni Moda', serif;
+      font-family: 'Cormorant Garamond', serif;
       font-size: 18px;
       color: var(--cream);
       line-height: 1.8;
@@ -78,7 +78,7 @@
       padding: 60px 24px;
     }
     .no-results .icon { font-size: 56px; margin-bottom: 20px; opacity: 0.5; }
-    .no-results h3 { font-family: 'Bodoni Moda', serif; font-size: 24px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
+    .no-results h3 { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--cream); margin-bottom: 10px; font-weight: 400; }
     .no-results p { font-size: 13px; color: var(--muted); }
 
     .results-section { display: none; }
@@ -103,7 +103,7 @@
   <div class="ambient ambient-2"></div>
 
   <nav class="nav">
-    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <a href="/" class="nav-logo"><svg class="icon kite-icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></a>
     <ul class="nav-links">
       <li><a href="/fly">Fly</a></li>
       <li><a href="/find">Find</a></li>
@@ -111,7 +111,7 @@
       <li><a href="/report">Report</a></li>
       <li><a href="/sky">The Night Sky</a></li>
     </ul>
-    <button class="nav-hamburger">☰</button>
+    <button class="nav-hamburger" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#menu"></use></svg></button>
   </nav>
 
   <div class="page-wrap">
@@ -154,14 +154,14 @@
         </div>
 
         <button class="btn btn-primary btn-full" onclick="searchKites()">
-          🔍 &nbsp;Search the Sky
+          <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#search"></use></svg> Search the Sky
         </button>
       </div>
 
       <!-- Results -->
       <div id="resultsSection" class="results-section">
         <div id="filterNote" class="filter-note">
-          🪁 Multiple kites found with your details. Use sender's birthday above to filter, or try answering each one.
+          <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Multiple kites found with your details. Use sender's birthday above to filter, or try answering each one.
         </div>
         <div id="resultsContainer"></div>
       </div>
@@ -173,7 +173,7 @@
       <div class="container">
         <div class="footer-grid">
           <div class="footer-brand">
-            <div class="logo">🪁 Kite<span>Mail</span></div>
+            <div class="logo"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></div>
             <p>A message carried by the wind — meant only for someone who knows to look up.</p>
           </div>
           <div class="footer-col">
@@ -220,7 +220,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>© 2026 KiteMail. Made with <span class="footer-heart">♥</span> for hearts that feel too much.</p>
+          <p>© 2026 KiteMail. Made with <span class="footer-heart"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#heart"></use></svg></span> for hearts that feel too much.</p>
           <p>No accounts. No ads. Just love.</p>
         </div>
       </div>
@@ -285,11 +285,11 @@
         if (!data.found || data.kites.length === 0) {
           container.innerHTML = `
             <div class="no-results card">
-              <div class="icon">🌬️</div>
+              <div class="icon">${iconMarkup('wind')}</div>
               <h3>No kites found</h3>
               <p>The sky looks clear for now. Make sure your name, nickname, and birthday are exactly as the sender would have written them.</p>
               <div style="margin-top: 24px;">
-                <a href="/fly" class="btn btn-outline">🪁 Fly one yourself?</a>
+                <a href="/fly" class="btn btn-outline">${iconMarkup('kite')} Fly one yourself?</a>
               </div>
             </div>
           `;
@@ -305,7 +305,7 @@
         showAlert('searchAlert', 'Something went wrong. Please try again.', 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '🔍 &nbsp;Search the Sky';
+        btn.innerHTML = `${iconMarkup('search')} Search the Sky`;
       }
     }
 
@@ -317,19 +317,19 @@
       const sentDate = new Date(kite.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const fromText = kite.sender_visible
         ? `From: <strong>${kite.sender_visible.name || kite.sender_visible.nickname || 'Someone'}</strong>`
-        : `From: <strong>Anonymous 🎭</strong>`;
+        : `From: <strong>Anonymous ${iconMarkup('anonymous')}</strong>`;
 
       div.innerHTML = `
         <div class="kite-result-header">
           <div>
-            <div class="badge badge-flying" id="badge-${idx}">🪁 Flying</div>
+            <div class="badge badge-flying" id="badge-${idx}">${iconMarkup('kite')} Flying</div>
           </div>
           <div class="kite-result-meta">
             ${fromText} &nbsp;·&nbsp; Released ${sentDate}
           </div>
         </div>
         <button class="btn btn-outline btn-full" onclick="toggleQuestions(${idx}, '${kite.id}')">
-          🔐 Try to Catch This Kite
+          ${iconMarkup('lock')} Try to Catch This Kite
         </button>
         <div class="questions-panel" id="qpanel-${idx}">
           <p style="font-size:13px; color: var(--muted-2); margin-bottom: 20px;">Answer at least <strong style="color:var(--cream)">2 of 3</strong> questions correctly to read your message.</p>
@@ -342,7 +342,7 @@
           `).join('')}
           <div id="qalert-${idx}" class="alert"></div>
           <button class="btn btn-primary btn-full" onclick="catchKite(${idx}, '${kite.id}')">
-            ✨ Catch It
+            ${iconMarkup('sparkles')} Catch It
           </button>
         </div>
         <div class="message-reveal" id="reveal-${idx}"></div>
@@ -379,26 +379,26 @@
           alert.textContent = `Only ${data.correct || 0} of 3 correct. Need at least 2. Check your answers and try again.`;
           alert.className = 'alert show alert-error';
           btn.disabled = false;
-          btn.innerHTML = '✨ Catch It';
+          btn.innerHTML = `${iconMarkup('sparkles')} Catch It`;
           return;
         }
 
         // SUCCESS — reveal message
         const badge = document.getElementById(`badge-${idx}`);
         badge.className = 'badge badge-caught';
-        badge.textContent = '✓ Caught';
+        badge.innerHTML = `${iconMarkup('check')} Caught`;
 
         document.getElementById(`qpanel-${idx}`).classList.remove('open');
         document.querySelector(`#kite-${idx} .btn-outline`).style.display = 'none';
 
         const sentDate = new Date(data.sent_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const fromText = data.is_anonymous
-          ? '— from someone who cares 🎭'
+          ? `— from someone who cares ${iconMarkup('anonymous')}`
           : `— from ${data.sender?.name || data.sender?.nickname || 'Someone special'}`;
 
         const reveal = document.getElementById(`reveal-${idx}`);
         reveal.innerHTML = `
-          <div class="message-reveal-icon">💌</div>
+          <div class="message-reveal-icon">${iconMarkup('mail')}</div>
           <p class="message-caught-text">You caught it. Released on ${sentDate}.</p>
           <p style="font-size:12px; color: var(--gold-dim); margin-bottom: 18px; letter-spacing: 1px;">
             Kite ID: <strong style="color: var(--gold);">${escapeHtml(foundKites[idx].kite_id)}</strong>
@@ -409,7 +409,7 @@
           <div class="divider" style="margin: 32px 0;"></div>
 
           <div id="reply-section-${idx}">
-            <h4 style="font-family: 'Bodoni Moda', serif; font-size: 18px; color: var(--cream); margin-bottom: 8px; font-weight: 400;">🌬️ Send a Breeze Back?</h4>
+            <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--cream); margin-bottom: 8px; font-weight: 400;">${iconMarkup('wind')} Send a Breeze Back?</h4>
             <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Send a short, one-time anonymous reply to the sender. They will see it when they track their kite.</p>
             <div class="form-group" style="margin-bottom: 12px;">
               <textarea id="reply-msg-${idx}" class="form-textarea" rows="3" placeholder="Write your reply..."></textarea>
@@ -418,9 +418,9 @@
           </div>
 
           <div style="margin-top:32px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-            <a href="/fly" class="btn btn-outline">🪁 Send one back</a>
-            <a href="/api/download/${foundKites[idx].kite_id}" target="_blank" class="btn btn-ghost">📥 Download as PDF</a>
-            <a href="/" class="btn btn-ghost">← Home</a>
+            <a href="/fly" class="btn btn-outline">${iconMarkup('kite')} Send one back</a>
+            <a href="/api/download/${foundKites[idx].kite_id}" target="_blank" class="btn btn-ghost">${iconMarkup('download')} Download as PDF</a>
+            <a href="/" class="btn btn-ghost">${iconMarkup('arrow-left')} Home</a>
           </div>
         `;
         reveal.classList.add('show');
@@ -429,7 +429,7 @@
       } catch (err) {
         showAlert(`qalert-${idx}`, 'Something went wrong. Please try again.', 'error');
         btn.disabled = false;
-        btn.innerHTML = '✨ Catch It';
+        btn.innerHTML = `${iconMarkup('sparkles')} Catch It`;
       }
     }
 
@@ -452,7 +452,7 @@
         if (!res.ok || data.error) throw new Error(data.error || 'Failed to send reply.');
 
         const replySection = document.getElementById(`reply-section-${idx}`);
-        replySection.innerHTML = `<p style="font-size: 13px; color: #70c880; text-align: center;">✓ Your breeze has been sent back into the sky.</p>`;
+        replySection.innerHTML = `<p style="font-size: 13px; color: #70c880; text-align: center;">${iconMarkup('check')} Your breeze has been sent back into the sky.</p>`;
 
       } catch (err) {
         btn.disabled = false;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lost in the Wind — KiteMail</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪁</text></svg>" />
+  <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .lost-page {
@@ -26,24 +26,24 @@
   <div class="ambient ambient-1"></div>
 
   <nav class="nav">
-    <a href="/" class="nav-logo"><span class="kite-icon">🪁</span> Kite<span>Mail</span></a>
+    <a href="/" class="nav-logo"><svg class="icon kite-icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg> Kite<span>Mail</span></a>
     <ul class="nav-links">
       <li><a href="/about">About</a></li>
       <li><a href="/find">Find a Kite</a></li>
       <li><a href="/fly" class="nav-cta">Fly a Kite</a></li>
     </ul>
-    <button class="nav-hamburger">☰</button>
+    <button class="nav-hamburger" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#menu"></use></svg></button>
   </nav>
 
   <div class="page-wrap">
     <div class="lost-page">
       <div class="fade-in">
-        <div class="lost-kite">🪁</div>
+        <div class="lost-kite"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#kite"></use></svg></div>
         <div class="lost-code">404</div>
         <h1 class="lost-title">Lost in the wind</h1>
         <p class="lost-sub">This page drifted away. Maybe it was never here to begin with.</p>
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-          <a href="/" class="btn btn-primary">← Back Home</a>
+          <a href="/" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#arrow-left"></use></svg> Back Home</a>
           <a href="/find" class="btn btn-outline">Find My Kite</a>
         </div>
       </div>
