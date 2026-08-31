@@ -651,8 +651,10 @@ body * { animation: none !important; }
   --nav-top-gap: 16px;
   --nav-side-gap: 24px;
   top: var(--nav-top-gap);
-  left: var(--nav-side-gap);
-  right: var(--nav-side-gap);
+  left: 50%;
+  right: auto;
+  width: min(calc(100% - 48px), 1100px);
+  transform: translateX(-50%);
   border-radius: 24px;
   justify-content: flex-start;
   background: color-mix(in srgb, var(--bg-card) 62%, transparent);
@@ -774,6 +776,10 @@ html { background: var(--bg); }
   .nav {
     --nav-top-gap: calc(10px + env(safe-area-inset-top));
     --nav-side-gap: 12px;
+    left: var(--nav-side-gap);
+    right: var(--nav-side-gap);
+    width: auto;
+    transform: none;
     min-height: 64px;
     padding: 14px 16px;
     border-radius: 20px;
@@ -840,7 +846,17 @@ html { background: var(--bg); }
   outline: 3px solid var(--gold-dim);
   outline-offset: 3px;
 }
-.footer { border-color: var(--border); }
+.footer { position: relative; border-top: 0; }
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(calc(100% - 48px), 1100px);
+  height: 1px;
+  background: var(--border);
+  transform: translateX(-50%);
+}
 .footer-brand .logo, .footer-col ul li a, .prose strong { color: var(--cream); }
 .footer-bottom { border-color: var(--border); }
 
