@@ -667,7 +667,7 @@ html { background: var(--bg); }
   position: fixed;
   z-index: 99;
   inset: 0 0 auto;
-  height: 88px;
+  height: 16px;
   background: var(--bg);
   pointer-events: none;
 }
@@ -770,7 +770,7 @@ html { background: var(--bg); }
 .nav-links.open ~ .nav-actions { display: flex; }
 
 @media (max-width: 768px) {
-  .nav-safe-mask { height: calc(88px + env(safe-area-inset-top)); }
+  .nav-safe-mask { height: calc(10px + env(safe-area-inset-top)); }
   .nav {
     --nav-top-gap: calc(10px + env(safe-area-inset-top));
     --nav-side-gap: 12px;
