@@ -648,22 +648,29 @@ body * { animation: none !important; }
 .fade-in, .kite-float, .bg-floating-el, .lost-kite, .big-kite, .success-kite, .ticket-kite, .message-reveal-icon, .cta-kite { opacity: 1; transform: none; }
 
 .nav {
+  --nav-top-gap: 16px;
+  --nav-side-gap: 24px;
+  top: var(--nav-top-gap);
+  left: var(--nav-side-gap);
+  right: var(--nav-side-gap);
+  border-radius: 24px;
   justify-content: flex-start;
-  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 18px 42px rgba(48, 5, 14, 0.14), 0 2px 8px rgba(48, 5, 14, 0.08);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  background: color-mix(in srgb, var(--bg-card) 62%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 32px rgba(48, 5, 14, 0.16), 0 2px 8px rgba(48, 5, 14, 0.08);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
 }
-.nav::after {
+:root[data-theme='dark'] .nav { background: color-mix(in srgb, var(--bg-card) 68%, transparent); }
+html::before {
   content: '';
-  position: absolute;
+  position: fixed;
+  z-index: 99;
   inset: 0 0 auto;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.56);
+  height: 16px;
+  background: var(--bg);
   pointer-events: none;
 }
-:root[data-theme='dark'] .nav::after { background: rgba(246, 243, 228, 0.22); }
 .nav-actions {
   display: flex;
   align-items: center;
@@ -763,9 +770,13 @@ body * { animation: none !important; }
 .nav-links.open ~ .nav-actions { display: flex; }
 
 @media (max-width: 768px) {
+  html::before { height: 10px; }
   .nav {
+    --nav-top-gap: 10px;
+    --nav-side-gap: 12px;
     min-height: 64px;
     padding: 14px 16px;
+    border-radius: 20px;
   }
   .nav-logo { gap: 6px; font-size: 20px; }
   .nav-logo .kite-icon { width: 18px; height: 18px; }
@@ -792,7 +803,7 @@ body * { animation: none !important; }
 }
 
 @media (max-width: 360px) {
-  .nav { padding-inline: 12px; }
+  .nav { --nav-side-gap: 8px; padding-inline: 12px; }
   .nav-logo { font-size: 18px; }
   .theme-toggle { width: 58px; }
   :root[data-theme='dark'] .theme-toggle::before { transform: translateX(24px); }
